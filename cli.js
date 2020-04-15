@@ -220,36 +220,47 @@ yargs
       }
     });
     mutableStdout.muted = false;
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: mutableStdout,
-      terminal: true
-    });
 
     const p = makePromise();
-    rl.question('seed phrase (default: autogen): ', seedPhrase => {
-      if (!seedPhrase) {
-        seedPhrase = lightwallet.keystore.generateRandomSeed();
-        console.log(seedPhrase);
+    read({ prompt: 'seed phrase (default: autogen): ', silent: true }, function(er, seedPhrase) {
+      if (!er) {
+        p.accept(seedPhrase);
+      } else {
+        p.reject(er);
       }
+    });
+    let seedPhrase = await p;
+    if (!seedPhrase) {
+      seedPhrase = lightwallet.keystore.generateRandomSeed();
+      console.log(seedPhrase);
+    }
 
-      rl.question('password: ', async password => {
-        rl.close();
+    const p2 = makePromise();
+    read({ prompt: 'password: ', silent: true }, function(er, password) {
+      if (!er) {
+        p2.accept(password);
+      } else {
+        p2.reject(er);
+      }
+    });
+    const password = await p2;
 
-        if (password) {
-          const ks = await _createKeystore(seedPhrase, password);
-          await mkdirp(os.homedir());
-          fs.writeFile(path.join(os.homedir(), '.xrpackage'), _exportKeyStore(ks), err => {
-            p.accept();
-          });
-          console.log(`0x${ks.addresses[0]}`);
+    const p3 = makePromise();
+    if (password) {
+      const ks = await _createKeystore(seedPhrase, password);
+      await mkdirp(os.homedir());
+      fs.writeFile(path.join(os.homedir(), '.xrpackage'), _exportKeyStore(ks), err => {
+        if (!err) {
+          p3.accept();
         } else {
-          p.reject(new Error('password is required'));
+          p3.reject(err);
         }
       });
-    });
-    await p;
-    mutableStdout.muted = true;
+      console.log(`0x${ks.addresses[0]}`);
+    } else {
+      p3.reject(new Error('password is required'));
+    }
+    await p3;
   })
   .command('publish [input]', 'publish a package', yargs => {
     yargs
