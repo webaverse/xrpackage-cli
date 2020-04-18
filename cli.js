@@ -176,6 +176,7 @@ const _importKeyStore = async (s, password) => {
 
 let handled = false;
 yargs
+  .scriptName('xrpk')
   .command('whoami', 'print logged in address', yargs => {
     yargs
       /* .positional('input', {
