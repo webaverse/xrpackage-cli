@@ -547,7 +547,7 @@ yargs
       fs.writeFileSync('manifest.json', JSON.stringify({
         xr_type: 'webxr-site@0.0.1',
         xr_main: 'index.html',
-      }));
+      }, null, 2));
       console.log('manifest.json');
     }
   })
