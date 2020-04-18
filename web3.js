@@ -1,3 +1,12 @@
+const btoa = require('btoa');
+const self = global;
+const window = global;
+const url = require('url');
+window.location = new url.URL('https://localhost/');
+window.Blob = require('node-blob');
+const xhr2 = require('xhr2');
+window.XMLHttpRequest = xhr2.XMLHttpRequest;
+
 ! function(t) {
     if ("object" == typeof exports && "undefined" != typeof module) module.exports = t();
     else if ("function" == typeof define && define.amd) define([], t);
@@ -32767,6 +32776,7 @@
                 try {
                     i.send(JSON.stringify(t))
                 } catch (t) {
+                	console.log('got t', t);
                     this.connected = !1, r(o.InvalidConnection(this.host))
                 }
             }, s.prototype.disconnect = function() {}, s.prototype.supportsSubscriptions = function() {
