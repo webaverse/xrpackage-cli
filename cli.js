@@ -587,16 +587,42 @@ yargs
         mimeType = xrTypeToMimeType[xrType];
         directory = null;
       } else if (/\.json$/.test(input)) {
-        const s = fs.readFileSync(input);
-        const j = JSON.parse(s);
-        if (typeof j.xr_type === 'string' && typeof j.xr_main === 'string') {
-          xrType = j.xr_type;
-          xrMain = j.xr_main;
-          mimeType = xrTypeToMimeType[xrType] || 'application/octet-stream';
-          fileInput = path.join(path.dirname(input), xrMain);
-          directory = path.dirname(input);
+        const s = (() => {
+          try {
+            return fs.readFileSync(input);
+          } catch (err) {
+            if (err.code === 'ENOENT') {
+              return null;
+            } else {
+              return null;
+            }
+          }
+        })();
+        if (s) {
+          let error;
+          const j = (() => {
+            try {
+              return JSON.parse(s);
+            } catch (err) {
+              error = err;
+              return null;
+            }
+          })();
+          if (j) {
+            if (typeof j.xr_type === 'string' && typeof j.xr_main === 'string') {
+              xrType = j.xr_type;
+              xrMain = j.xr_main;
+              mimeType = xrTypeToMimeType[xrType] || 'application/octet-stream';
+              fileInput = path.join(path.dirname(input), xrMain);
+              directory = path.dirname(input);
+            } else {
+              console.warn(`manifest.json missing xr_type: ${input}`);
+            }
+          } else {
+            console.warn('failed to parse manifest.json: ' + error.stack);
+          }
         } else {
-          throw new Error(`manifest.json missing xr_type: ${input}`);
+          console.warn('missing manifest.json; try xrpk init');
         }
       } else {
         const stats = fs.statSync(input);
