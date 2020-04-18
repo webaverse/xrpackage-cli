@@ -657,119 +657,120 @@ yargs
       }
     };
     _detectType(path.resolve(process.cwd(), argv.input));
+    if (fileInput) {
+      const fileData = fs.readFileSync(fileInput);
+      // console.log('got data', data.length);
 
-    const fileData = fs.readFileSync(fileInput);
-    // console.log('got data', data.length);
-
-    const files = [
-      {
-        url: '/' + xrMain,
-        type: mimeType,
-        data: fileData,
-      },
-      {
-        url: '/manifest.json',
-        type: 'application/json',
-        data: JSON.stringify({
-          xr_type: xrType,
-          xr_main: xrMain,
-        }, null, 2),
-      },
-    ];
-    if (directory) {
-      const _readdirRecursive = rootDirectory => {
-        const result = [];
-        const _recurse = d => {
-          const filenames = fs.readdirSync(d);
-          for (let i = 0; i < filenames.length; i++) {
-            const filename = path.join(d, filenames[i]);
-            const stats = fs.lstatSync(filename);
-            if (stats.isFile()) {
-              result.push(filename.slice(rootDirectory.length));
-            } else if (stats.isDirectory()) {
-              _recurse(filename);
+      const files = [
+        {
+          url: '/' + xrMain,
+          type: mimeType,
+          data: fileData,
+        },
+        {
+          url: '/manifest.json',
+          type: 'application/json',
+          data: JSON.stringify({
+            xr_type: xrType,
+            xr_main: xrMain,
+          }, null, 2),
+        },
+      ];
+      if (directory) {
+        const _readdirRecursive = rootDirectory => {
+          const result = [];
+          const _recurse = d => {
+            const filenames = fs.readdirSync(d);
+            for (let i = 0; i < filenames.length; i++) {
+              const filename = path.join(d, filenames[i]);
+              const stats = fs.lstatSync(filename);
+              if (stats.isFile()) {
+                result.push(filename.slice(rootDirectory.length));
+              } else if (stats.isDirectory()) {
+                _recurse(filename);
+              }
             }
-          }
+          };
+          _recurse(rootDirectory);
+          return result;
         };
-        _recurse(rootDirectory);
-        return result;
-      };
-      const filenames = _readdirRecursive(directory);
-      for (let i = 0; i < filenames.length; i++) {
-        const f = filenames[i];
-        if (!files.some(({url}) => url === f)) {
-          const type = mime.getType(f) || 'application/octet-stream';
-          const data = fs.readFileSync(path.join(directory, f));
-          files.push({
-            url: f,
-            type,
-            data,
-          });
+        const filenames = _readdirRecursive(directory);
+        for (let i = 0; i < filenames.length; i++) {
+          const f = filenames[i];
+          if (!files.some(({url}) => url === f)) {
+            const type = mime.getType(f) || 'application/octet-stream';
+            const data = fs.readFileSync(path.join(directory, f));
+            files.push({
+              url: f,
+              type,
+              data,
+            });
+          }
         }
       }
-    }
 
-    const primaryUrl = `https://xrpackage.org`;
-    const builder = (new wbn.BundleBuilder(primaryUrl + '/' + xrMain))
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const {url, type, data} = file;
-      builder.addExchange(primaryUrl + url, 200, {
-        'Content-Type': type,
-      }, data);
-    }
-    const uint8Array = builder.createBundle();
-    // console.log('got bundle', uint8Array.byteLength);
+      const primaryUrl = `https://xrpackage.org`;
+      const builder = (new wbn.BundleBuilder(primaryUrl + '/' + xrMain))
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const {url, type, data} = file;
+        builder.addExchange(primaryUrl + url, 200, {
+          'Content-Type': type,
+        }, data);
+      }
+      const uint8Array = builder.createBundle();
+      // console.log('got bundle', uint8Array.byteLength);
 
-    const app = express();
-    app.use((req, res, next) => {
-      res.set('Access-Control-Allow-Origin', '*');
-      res.set('Access-Control-Allow-Methods', '*');
-      next();
-    });
-    app.get('/a.wbn', (req, res) => {
-      // console.log('got wbn request');
-      res.end(uint8Array);
-    });
-    const gifPromise = makePromise();
-    const _readIntoPromise = (type, p) => (req, res) => {
-      // console.log(`got ${type} request`);
-
-      const bs = [];
-      req.on('data', d => {
-        bs.push(d);
+      const app = express();
+      app.use((req, res, next) => {
+        res.set('Access-Control-Allow-Origin', '*');
+        res.set('Access-Control-Allow-Methods', '*');
+        next();
       });
-      req.once('end', () => {
-        const d = Buffer.concat(bs);
-        p.accept(d);
-        res.end();
+      app.get('/a.wbn', (req, res) => {
+        // console.log('got wbn request');
+        res.end(uint8Array);
       });
-      req.once('error', p.reject);
-    };
-    app.put('/a.gif', _readIntoPromise('gif', gifPromise));
-    const glbPromise = makePromise();
-    app.put('/a.glb', _readIntoPromise('glb', glbPromise));
-    app.use(express.static(__dirname));
-    const port = 9999;
-    const server = http.createServer(app);
-    const connections = [];
-    server.on('connection', c => {
-      connections.push(c);
-    });
-    server.listen(port, () => {
-      opn(`https://xrpackage.org/screenshot.html?srcWbn=http://localhost:${port}/a.wbn&dstGif=http://localhost:${port}/a.gif&dstGlb=http://localhost:${port}/a.glb`);
-    });
+      const gifPromise = makePromise();
+      const _readIntoPromise = (type, p) => (req, res) => {
+        // console.log(`got ${type} request`);
 
-    const [gifUint8Array, glbUint8Array] = await Promise.all([gifPromise, glbPromise]);
-    server.close();
-    for (let i = 0; i < connections.length; i++) {
-      connections[i].destroy();
+        const bs = [];
+        req.on('data', d => {
+          bs.push(d);
+        });
+        req.once('end', () => {
+          const d = Buffer.concat(bs);
+          p.accept(d);
+          res.end();
+        });
+        req.once('error', p.reject);
+      };
+      app.put('/a.gif', _readIntoPromise('gif', gifPromise));
+      const glbPromise = makePromise();
+      app.put('/a.glb', _readIntoPromise('glb', glbPromise));
+      app.use(express.static(__dirname));
+      const port = 9999;
+      const server = http.createServer(app);
+      const connections = [];
+      server.on('connection', c => {
+        connections.push(c);
+      });
+      server.listen(port, () => {
+        opn(`https://xrpackage.org/screenshot.html?srcWbn=http://localhost:${port}/a.wbn&dstGif=http://localhost:${port}/a.gif&dstGlb=http://localhost:${port}/a.glb`);
+      });
+
+      const [gifUint8Array, glbUint8Array] = await Promise.all([gifPromise, glbPromise]);
+      server.close();
+      for (let i = 0; i < connections.length; i++) {
+        connections[i].destroy();
+      }
+
+      fs.writeFileSync(argv.output, uint8Array);
+      fs.writeFileSync(argv.output + '.gif', gifUint8Array);
+      fs.writeFileSync(argv.output + '.glb', glbUint8Array);
+      console.log(argv.output);
     }
-
-    fs.writeFileSync(argv.output, uint8Array);
-    fs.writeFileSync(argv.output + '.gif', gifUint8Array);
-    fs.writeFileSync(argv.output + '.glb', glbUint8Array);
-    console.log(argv.output);
   })
   .command('view [input]', 'view contents of input .wbn file', yargs => {
     yargs
