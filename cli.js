@@ -546,7 +546,7 @@ yargs
     } else {
       fs.writeFileSync('manifest.json', JSON.stringify({
         xr_type: 'webxr-site@0.0.1',
-        xr_main: 'index.html',
+        start_url: 'index.html',
       }, null, 2));
       console.log('manifest.json');
     }
@@ -571,7 +571,7 @@ yargs
       argv.output = 'a.wbn';
     }
 
-    let fileInput, xrType, mimeType, directory;
+    let fileInput, startUrl, xrType, mimeType, directory;
     const xrTypeToMimeType = {
       'gltf@0.0.1': 'model/gltf+json',
       'vrm@0.0.1': 'application/octet-stream',
@@ -582,31 +582,31 @@ yargs
       if (/\.gltf$/.test(input)) {
         fileInput = input;
         xrType = 'gltf@0.0.1';
-        xrMain = path.basename(fileInput);
+        startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
         directory = null;
       } else if (/\.glb$/.test(input)) {
         fileInput = input;
         xrType = 'gltf@0.0.1';
-        xrMain = path.basename(fileInput);
+        startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
         directory = null;
       } else if (/\.vrm$/.test(input)) {
         fileInput = input;
         xrType = 'vrm@0.0.1';
-        xrMain = path.basename(fileInput);
+        startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
         directory = null;
       } else if (/\.vox$/.test(input)) {
         fileInput = input;
         xrType = 'vox@0.0.1';
-        xrMain = path.basename(fileInput);
+        startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
         directory = null;
       } else if (/\.html$/.test(input)) {
         fileInput = input;
         xrType = 'webxr-site@0.0.1';
-        xrMain = path.basename(fileInput);
+        startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
         directory = null;
       } else if (/\.json$/.test(input)) {
@@ -632,14 +632,14 @@ yargs
             }
           })();
           if (j) {
-            if (typeof j.xr_type === 'string' && typeof j.xr_main === 'string') {
+            if (typeof j.xr_type === 'string' && typeof j.start_url === 'string') {
               xrType = j.xr_type;
-              xrMain = j.xr_main;
+              startUrl = j.start_url;
               mimeType = xrTypeToMimeType[xrType] || 'application/octet-stream';
-              fileInput = path.join(path.dirname(input), xrMain);
+              fileInput = path.join(path.dirname(input), startUrl);
               directory = path.dirname(input);
             } else {
-              console.warn(`manifest.json missing xr_type: ${input}`);
+              console.warn(`manifest.json missing xr_type and start_url: ${input}`);
             }
           } else {
             console.warn('failed to parse manifest.json: ' + error.stack);
@@ -663,7 +663,7 @@ yargs
 
       const files = [
         {
-          url: '/' + xrMain,
+          url: '/' + startUrl,
           type: mimeType,
           data: fileData,
         },
@@ -672,7 +672,7 @@ yargs
           type: 'application/json',
           data: JSON.stringify({
             xr_type: xrType,
-            xr_main: xrMain,
+            start_url: startUrl,
           }, null, 2),
         },
       ];
@@ -710,7 +710,7 @@ yargs
       }
 
       const primaryUrl = `https://xrpackage.org`;
-      const builder = (new wbn.BundleBuilder(primaryUrl + '/' + xrMain))
+      const builder = (new wbn.BundleBuilder(primaryUrl + '/' + startUrl))
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const {url, type, data} = file;
