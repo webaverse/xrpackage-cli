@@ -469,6 +469,11 @@ yargs
       opn(`https://xrpackage.org/run.html?i=${argv.id}`);
     } else {
       const app = express();
+      app.use((req, res, next) => {
+        res.set('Access-Control-Allow-Origin', '*');
+        res.set('Access-Control-Allow-Methods', '*');
+        next();
+      });
       app.get('/a.wbn', (req, res) => {
         const rs = fs.createReadStream(argv.id);
         rs.pipe(res);
@@ -481,7 +486,7 @@ yargs
       const port = 9999;
       const server = http.createServer(app);
       server.listen(port, () => {
-        opn(`http://localhost:${port}/run.html?u=/a.wbn`);
+        opn(`https://xrpackage.org/run.html?u=http://localhost:${port}/a.wbn`);
       });
     }
   })
@@ -668,11 +673,19 @@ yargs
     // console.log('got bundle', uint8Array.byteLength);
 
     const app = express();
+    app.use((req, res, next) => {
+      res.set('Access-Control-Allow-Origin', '*');
+      res.set('Access-Control-Allow-Methods', '*');
+      next();
+    });
     app.get('/a.wbn', (req, res) => {
+      // console.log('got wbn request');
       res.end(uint8Array);
     });
     const gifPromise = makePromise();
-    const _readIntoPromise = p => (req, res) => {
+    const _readIntoPromise = (type, p) => (req, res) => {
+      // console.log(`got ${type} request`);
+
       const bs = [];
       req.on('data', d => {
         bs.push(d);
@@ -684,9 +697,9 @@ yargs
       });
       req.once('error', p.reject);
     };
-    app.put('/a.gif', _readIntoPromise(gifPromise));
+    app.put('/a.gif', _readIntoPromise('gif', gifPromise));
     const glbPromise = makePromise();
-    app.put('/a.glb', _readIntoPromise(glbPromise));
+    app.put('/a.glb', _readIntoPromise('glb', glbPromise));
     app.use(express.static(__dirname));
     const port = 9999;
     const server = http.createServer(app);
@@ -695,7 +708,7 @@ yargs
       connections.push(c);
     });
     server.listen(port, () => {
-      opn(`http://localhost:${port}/screenshot.html?srcWbn=http://localhost:${port}/a.wbn&dstGif=http://localhost:${port}/a.gif&dstGlb=http://localhost:${port}/a.glb`);
+      opn(`https://xrpackage.org/screenshot.html?srcWbn=http://localhost:${port}/a.wbn&dstGif=http://localhost:${port}/a.gif&dstGlb=http://localhost:${port}/a.glb`);
     });
 
     const [gifUint8Array, glbUint8Array] = await Promise.all([gifPromise, glbPromise]);
