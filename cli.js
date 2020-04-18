@@ -565,7 +565,7 @@ yargs
     handled = true;
 
     if (typeof argv.input !== 'string') {
-      argv.input = '-';
+      argv.input = '.';
     }
     if (typeof argv.output !== 'string') {
       argv.output = 'a.wbn';
