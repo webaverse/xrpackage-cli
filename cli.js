@@ -69,18 +69,32 @@ function makePromise() {
   return p;
 }
 async function getKs() {
-  const ksString = fs.readFileSync(path.join(os.homedir(), '.xrpackage'));
-  const passwordPromise = makePromise();
-  read({ prompt: 'password: ', silent: true }, function(er, password) {
-    if (!er) {
-      passwordPromise.accept(password);
-    } else {
-      passwordPromise.reject(er);
+  const ksString = (() => {
+    try {
+      return fs.readFileSync(path.join(os.homedir(), '.xrpackage'));
+    } catch(err) {
+      if (err.code === 'ENOENT') {
+        return null;
+      } else {
+        throw err;
+      }
     }
-  });
-  const password = await passwordPromise;
-  const ks = await _importKeyStore(ksString, password);
-  return ks;
+  })();
+  if (ksString) {
+    const passwordPromise = makePromise();
+    read({ prompt: 'password: ', silent: true }, function(er, password) {
+      if (!er) {
+        passwordPromise.accept(password);
+      } else {
+        passwordPromise.reject(er);
+      }
+    });
+    const password = await passwordPromise;
+    const ks = await _importKeyStore(ksString, password);
+    return ks;
+  } else {
+    return null;
+  }
 }
 const hdPathString = `m/44'/60'/0'/0`;
 async function exportSeed(ks, password) {
@@ -173,6 +187,9 @@ const _importKeyStore = async (s, password) => {
   ks.getPrivateKey = getPrivateKey.bind(null, ks, password);
   return ks;
 };
+const _printNotLoggedIn = () => {
+  console.warn('not logged in; use xrpk login');
+};
 
 let handled = false;
 yargs
@@ -187,8 +204,11 @@ yargs
     handled = true;
 
     const ks = await getKs();
-
-    console.log(`0x${ks.addresses[0]}`);
+    if (ks) {
+      console.log(`0x${ks.addresses[0]}`);
+    } else {
+      _printNotLoggedIn();
+    }
   })
   .command('privatekey', 'export private key menmonic', yargs => {
     yargs
@@ -200,9 +220,12 @@ yargs
     handled = true;
 
     const ks = await getKs();
-
-    const seed = await ks.exportSeed();
-    console.log(seed);
+    if (ks) {
+      const seed = await ks.exportSeed();
+      console.log(seed);
+    } else {
+      _printNotLoggedIn();
+    }
   })
   .command('login', 'log in to wallet', yargs => {
     yargs
@@ -273,96 +296,99 @@ yargs
     handled = true;
 
     const ks = await getKs();
+    if (ks) {
+      const objectName = path.basename(argv.input);
+      const dataArrayBuffer = fs.readFileSync(argv.input);
+      const screenshotBlob = fs.readFileSync(argv.input + '.gif');
+      const modelBlob = fs.readFileSync(argv.input + '.glb');
 
-    const objectName = path.basename(argv.input);
-    const dataArrayBuffer = fs.readFileSync(argv.input);
-    const screenshotBlob = fs.readFileSync(argv.input + '.gif');
-    const modelBlob = fs.readFileSync(argv.input + '.glb');
-
-    console.log('uploading...');
-    const [
-      dataHash,
-      screenshotHash,
-      modelHash,
-    ] = await Promise.all([
-      fetch(`${apiHost}/`, {
-        method: 'PUT',
-        body: dataArrayBuffer,
-      })
-        .then(res => res.json())
-        .then(j => j.hash),
-      fetch(`${apiHost}/`, {
-        method: 'PUT',
-        body: screenshotBlob,
-      })
-        .then(res => res.json())
-        .then(j => j.hash),
-      fetch(`${apiHost}/`, {
-        method: 'PUT',
-        body: modelBlob,
-      })
-        .then(res => res.json())
-        .then(j => j.hash),
-    ]);
-    const metadataHash = await fetch(`${apiHost}/`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        objectName,
+      console.log('uploading...');
+      const [
         dataHash,
         screenshotHash,
         modelHash,
-      }),
-    })
-      .then(res => res.json())
-      .then(j => j.hash);
+      ] = await Promise.all([
+        fetch(`${apiHost}/`, {
+          method: 'PUT',
+          body: dataArrayBuffer,
+        })
+          .then(res => res.json())
+          .then(j => j.hash),
+        fetch(`${apiHost}/`, {
+          method: 'PUT',
+          body: screenshotBlob,
+        })
+          .then(res => res.json())
+          .then(j => j.hash),
+        fetch(`${apiHost}/`, {
+          method: 'PUT',
+          body: modelBlob,
+        })
+          .then(res => res.json())
+          .then(j => j.hash),
+      ]);
+      const metadataHash = await fetch(`${apiHost}/`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          objectName,
+          dataHash,
+          screenshotHash,
+          modelHash,
+        }),
+      })
+        .then(res => res.json())
+        .then(j => j.hash);
 
-    /* const address = `0x${ks.addresses[0]}`;
-    const nonce = await web3.eth.getTransactionCount(address);
-    const gasPrice = await web3.eth.getGasPrice();
-    const rawTx = {
-      to: dstAddress,
-      srcValue: srcValue * 1e18,
-      gasPrice,
-      gas: 0,
-      nonce,
-    };
-    rawTx.gas = await web3.eth.estimateGas(rawTx);
-    const serializedTx = new ethereumjs.Tx(rawTx).serialize();
-    const signed = await ks.signTx(serializedTx);
-    web3.eth.sendSignedTransaction('0x' + signed).on('receipt', e => {
-      console.log('got tx receipt', e); // XXX
-    }); */
+      /* const address = `0x${ks.addresses[0]}`;
+      const nonce = await web3.eth.getTransactionCount(address);
+      const gasPrice = await web3.eth.getGasPrice();
+      const rawTx = {
+        to: dstAddress,
+        srcValue: srcValue * 1e18,
+        gasPrice,
+        gas: 0,
+        nonce,
+      };
+      rawTx.gas = await web3.eth.estimateGas(rawTx);
+      const serializedTx = new ethereumjs.Tx(rawTx).serialize();
+      const signed = await ks.signTx(serializedTx);
+      web3.eth.sendSignedTransaction('0x' + signed).on('receipt', e => {
+        console.log('got tx receipt', e); // XXX
+      }); */
 
-    console.log(`${apiHost}/${dataHash}.wbn`);
-    console.log(`${apiHost}/${screenshotHash}.gif`);
-    console.log(`${apiHost}/${modelHash}.glb`);
-    console.log(`${apiHost}/${metadataHash}.json`);
+      console.log(`${apiHost}/${dataHash}.wbn`);
+      console.log(`${apiHost}/${screenshotHash}.gif`);
+      console.log(`${apiHost}/${modelHash}.glb`);
+      console.log(`${apiHost}/${metadataHash}.json`);
 
-    console.log('minting...');
-    const contract = await getContract;
-    const address = `0x${ks.addresses[0]}`;
-    const privateKey = await ks.getPrivateKey();
-    // console.log('got pk', privateKey);
-    // web3.eth.accounts.wallet.add('0x' + Buffer.from(privateKey).toString('hex'));
-    const account = web3.eth.accounts.privateKeyToAccount('0x' + privateKey);
-    web3.eth.accounts.wallet.add(account);
+      console.log('minting...');
+      const contract = await getContract;
+      const address = `0x${ks.addresses[0]}`;
+      const privateKey = await ks.getPrivateKey();
+      // console.log('got pk', privateKey);
+      // web3.eth.accounts.wallet.add('0x' + Buffer.from(privateKey).toString('hex'));
+      const account = web3.eth.accounts.privateKeyToAccount('0x' + privateKey);
+      web3.eth.accounts.wallet.add(account);
 
-    const nonce = await web3.eth.getTransactionCount(address);
-    const gasPrice = await web3.eth.getGasPrice();
-    // const value = '10000000000000000'; // 0.01 ETH
+      const nonce = await web3.eth.getTransactionCount(address);
+      const gasPrice = await web3.eth.getGasPrice();
+      // const value = '10000000000000000'; // 0.01 ETH
 
-    const m = contract.methods.mint(1, 'hash', metadataHash);
-    const o = {
-      gas: 0,
-      from: address,
-      nonce,
-      // value,
-    };
-    o.gas = await m.estimateGas(o);
-    const receipt = await m.send(o);
-    const id = parseInt(receipt.events.URI.returnValues[1], 10);
-    console.log(`${tokenHost}/${id}`);
-    console.log(`https://${network}.opensea.io/assets/${contract._address}/${id}`);
+      const m = contract.methods.mint(1, 'hash', metadataHash);
+      const o = {
+        gas: 0,
+        from: address,
+        nonce,
+        // value,
+      };
+      o.gas = await m.estimateGas(o);
+      const receipt = await m.send(o);
+      const id = parseInt(receipt.events.URI.returnValues[1], 10);
+      console.log(`${tokenHost}/${id}`);
+      console.log(`https://${network}.opensea.io/assets/${contract._address}/${id}`);
+    } else {
+      _printNotLoggedIn();
+    }
   })
   .command('ls', 'list wallet inventory', yargs => {
     yargs
@@ -374,43 +400,46 @@ yargs
     handled = true;
 
     const ks = await getKs();
-
-    const contract = await getContract;
-    const owner = '0x' + ks.addresses[0];
-    const owners = Array(100);
-    const ids = Array(owners.length);
-    for (let i = 0; i < ids.length; i++) {
-      owners[i] = owner;
-      ids[i] = i+1;
-    }
-    const balances = await contract.methods.balanceOfBatch(owners, ids).call();
-    const ownedIds = balances.map((balance, id) => {
-      balance = parseInt(balance, 10);
-      if (balance > 0) {
-        return id;
-      } else {
-        return null;
+    if (ks) {
+      const contract = await getContract;
+      const owner = '0x' + ks.addresses[0];
+      const owners = Array(100);
+      const ids = Array(owners.length);
+      for (let i = 0; i < ids.length; i++) {
+        owners[i] = owner;
+        ids[i] = i+1;
       }
-    }).filter(id => id !== null);
-    const objects = [];
-    for (let i = 0; i < ownedIds.length; i++) {
-      const id = ownedIds[i];
-      const metadataHash = await contract.methods.getMetadata(id, 'hash').call();
-      const metadata = await fetch(`${apiHost}/${metadataHash}`)
-        .then(res => res.json());
-      const {objectName, dataHash} = metadata;
-      objects.push({
-        id,
-        objectName,
-        dataHash,
-      });
+      const balances = await contract.methods.balanceOfBatch(owners, ids).call();
+      const ownedIds = balances.map((balance, id) => {
+        balance = parseInt(balance, 10);
+        if (balance > 0) {
+          return id;
+        } else {
+          return null;
+        }
+      }).filter(id => id !== null);
+      const objects = [];
+      for (let i = 0; i < ownedIds.length; i++) {
+        const id = ownedIds[i];
+        const metadataHash = await contract.methods.getMetadata(id, 'hash').call();
+        const metadata = await fetch(`${apiHost}/${metadataHash}`)
+          .then(res => res.json());
+        const {objectName, dataHash} = metadata;
+        objects.push({
+          id,
+          objectName,
+          dataHash,
+        });
+      }
+      for (let i = 0; i < ownedIds.length; i++) {
+        const object = objects[i];
+        console.log(object.id + ' ' + JSON.stringify(object.objectName) + ' ' + `${apiHost}/${object.dataHash}.wbn`);
+      }
+      /* const nonce = await contract.methods.getNonce().call();
+      console.log(nonce); */
+    } else {
+      _printNotLoggedIn();
     }
-    for (let i = 0; i < ownedIds.length; i++) {
-      const object = objects[i];
-      console.log(object.id + ' ' + JSON.stringify(object.objectName) + ' ' + `${apiHost}/${object.dataHash}.wbn`);
-    }
-    /* const nonce = await contract.methods.getNonce().call();
-    console.log(nonce); */
   })
   .command('count', 'get count of published packages', yargs => {
     yargs
