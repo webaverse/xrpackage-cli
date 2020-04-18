@@ -12,12 +12,12 @@ const yargs = require('yargs');
 const fetch = require('node-fetch');
 const mime = require('mime');
 const wbn = require('wbn');
-const ethereumjs = {
+/* const ethereumjs = {
   Tx: require('ethereumjs-tx').Transaction,
-};
-const {BigNumber} = require('bignumber.js');
-const lightwallet = require('eth-lightwallet');
-const Web3 = require('web3');
+}; */
+// const {BigNumber} = require('bignumber.js');
+const lightwallet = require('./eth-lightwallet');
+const Web3 = require('./web3');
 const express = require('express');
 const opn = require('opn');
 
