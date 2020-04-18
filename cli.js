@@ -781,24 +781,24 @@ yargs
   }, async argv => {
     handled = true;
 
-    /* if (typeof argv.input !== 'string') {
-      argv.input = '-';
-    } */
-    const d = fs.readFileSync(argv.input);
-    const bundle = new wbn.Bundle(d);
-    const files = [];
-    for (const url of bundle.urls) {
-      const response = bundle.getResponse(url);
-      console.log(url);
-      files.push({
-        url,
-        // status: response.status,
-        // headers: response.headers,
-        response,
-        // body: response.body.toString('utf-8')
-      });
+    if (argv.input) {
+      const d = fs.readFileSync(argv.input);
+      const bundle = new wbn.Bundle(d);
+      const files = [];
+      for (const url of bundle.urls) {
+        const response = bundle.getResponse(url);
+        console.log(url);
+        files.push({
+          url,
+          // status: response.status,
+          // headers: response.headers,
+          response,
+          // body: response.body.toString('utf-8')
+        });
+      }
+    } else {
+      console.warn('missing input file');
     }
-    // console.log(files.map());
   }).argv;
 if (!handled) {
   yargs.showHelp();
