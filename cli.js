@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+Error.stackTraceLimit = 300;
+
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
