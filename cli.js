@@ -575,7 +575,7 @@ yargs
       argv.output = 'a.wbn';
     }
 
-    let fileInput, startUrl, xrType, mimeType, directory;
+    let fileInput, startUrl, xrType, mimeType, description, directory;
     const xrTypeToMimeType = {
       'gltf@0.0.1': 'model/gltf+json',
       'vrm@0.0.1': 'application/octet-stream',
@@ -588,30 +588,35 @@ yargs
         xrType = 'gltf@0.0.1';
         startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
+        description = 'GLTF JSON model';
         directory = null;
       } else if (/\.glb$/.test(input)) {
         fileInput = input;
         xrType = 'gltf@0.0.1';
         startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
+        description = 'GLTF binary model';
         directory = null;
       } else if (/\.vrm$/.test(input)) {
         fileInput = input;
         xrType = 'vrm@0.0.1';
         startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
+        description = 'VRM model';
         directory = null;
       } else if (/\.vox$/.test(input)) {
         fileInput = input;
         xrType = 'vox@0.0.1';
         startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
+        description = 'VOX model';
         directory = null;
       } else if (/\.html$/.test(input)) {
         fileInput = input;
         xrType = 'webxr-site@0.0.1';
         startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
+        description = 'WebXR app';
         directory = null;
       } else if (/\.json$/.test(input)) {
         const s = (() => {
@@ -641,6 +646,7 @@ yargs
               startUrl = j.start_url;
               mimeType = xrTypeToMimeType[xrType] || 'application/octet-stream';
               fileInput = path.join(path.dirname(input), startUrl);
+              description = 'Directory package';
               directory = path.dirname(input);
             } else {
               console.warn(`manifest.json missing xr_type and start_url: ${input}`);
@@ -675,6 +681,8 @@ yargs
           url: '/manifest.json',
           type: 'application/json',
           data: JSON.stringify({
+            name: argv.input,
+            description,
             xr_type: xrType,
             start_url: startUrl,
           }, null, 2),
