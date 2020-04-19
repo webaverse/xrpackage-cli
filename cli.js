@@ -822,6 +822,30 @@ yargs
     } else {
       console.warn('missing input file');
     }
+  })
+  .command('extract [input]', 'extract contents of .wbn file', yargs => {
+    yargs
+      .positional('input', {
+        describe: '.wbn file to extract',
+        // default: 5000
+      });
+  }, async argv => {
+    handled = true;
+
+    if (argv.input) {
+      const d = fs.readFileSync(argv.input);
+      const bundle = new wbn.Bundle(d);
+      const files = [];
+      for (const url of bundle.urls) {
+        const pathname = new URL(url).pathname.slice(1);
+        console.log(pathname);
+        const dirname = path.dirname(pathname);
+        await mkdirp(dirname);
+        fs.writeFileSync(pathname, bundle.getResponse(url).body);
+      }
+    } else {
+      console.warn('missing input file');
+    }
   }).argv;
 if (!handled) {
   yargs.showHelp();
