@@ -300,95 +300,105 @@ yargs
 
     const ks = await getKs();
     if (ks) {
-      const objectName = path.basename(argv.input);
       const dataArrayBuffer = fs.readFileSync(argv.input);
-      const screenshotBlob = fs.readFileSync(argv.input + '.gif');
-      const modelBlob = fs.readFileSync(argv.input + '.glb');
+      const bundle = new wbn.Bundle(dataArrayBuffer);
+      if (bundle.urls.includes('https://xrpackage.org/manifest.json')) {
+        const screenshotBlob = fs.readFileSync(argv.input + '.gif');
+        const modelBlob = fs.readFileSync(argv.input + '.glb');
 
-      console.log('uploading...');
-      const [
-        dataHash,
-        screenshotHash,
-        modelHash,
-      ] = await Promise.all([
-        fetch(`${apiHost}/`, {
-          method: 'PUT',
-          body: dataArrayBuffer,
-        })
-          .then(res => res.json())
-          .then(j => j.hash),
-        fetch(`${apiHost}/`, {
-          method: 'PUT',
-          body: screenshotBlob,
-        })
-          .then(res => res.json())
-          .then(j => j.hash),
-        fetch(`${apiHost}/`, {
-          method: 'PUT',
-          body: modelBlob,
-        })
-          .then(res => res.json())
-          .then(j => j.hash),
-      ]);
-      const metadataHash = await fetch(`${apiHost}/`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          objectName,
+        const response = bundle.getResponse('https://xrpackage.org/manifest.json');
+        const s = response.body.toString('utf-8');
+        const j = JSON.parse(s);
+        const {name, description} = j;
+
+        const objectName = typeof name === 'string' ? name : path.basename(argv.input);
+        const objectDescription = typeof description === 'string' ? description : `Package for ${path.basename(argv.input)}`;
+
+        console.log('Name:', objectName);
+        console.log('Description:', objectDescription);
+
+        console.log('uploading...');
+        const [
           dataHash,
           screenshotHash,
           modelHash,
-        }),
-      })
-        .then(res => res.json())
-        .then(j => j.hash);
+        ] = await Promise.all([
+          fetch(`${apiHost}/`, {
+            method: 'PUT',
+            body: dataArrayBuffer,
+          })
+            .then(res => res.json())
+            .then(j => j.hash),
+          fetch(`${apiHost}/`, {
+            method: 'PUT',
+            body: screenshotBlob,
+          })
+            .then(res => res.json())
+            .then(j => j.hash),
+          fetch(`${apiHost}/`, {
+            method: 'PUT',
+            body: modelBlob,
+          })
+            .then(res => res.json())
+            .then(j => j.hash),
+        ]);
+        const metadataHash = await fetch(`${apiHost}/`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            objectName,
+            objectDescription,
+            dataHash,
+            screenshotHash,
+            modelHash,
+          }),
+        })
+          .then(res => res.json())
+          .then(j => j.hash);
 
-      /* const address = `0x${ks.addresses[0]}`;
-      const nonce = await web3.eth.getTransactionCount(address);
-      const gasPrice = await web3.eth.getGasPrice();
-      const rawTx = {
-        to: dstAddress,
-        srcValue: srcValue * 1e18,
-        gasPrice,
-        gas: 0,
-        nonce,
-      };
-      rawTx.gas = await web3.eth.estimateGas(rawTx);
-      const serializedTx = new ethereumjs.Tx(rawTx).serialize();
-      const signed = await ks.signTx(serializedTx);
-      web3.eth.sendSignedTransaction('0x' + signed).on('receipt', e => {
-        console.log('got tx receipt', e); // XXX
-      }); */
+        console.log(`${apiHost}/${dataHash}.wbn`);
+        console.log(`${apiHost}/${screenshotHash}.gif`);
+        console.log(`${apiHost}/${modelHash}.glb`);
+        console.log(`${apiHost}/${metadataHash}.json`);
 
-      console.log(`${apiHost}/${dataHash}.wbn`);
-      console.log(`${apiHost}/${screenshotHash}.gif`);
-      console.log(`${apiHost}/${modelHash}.glb`);
-      console.log(`${apiHost}/${metadataHash}.json`);
+        console.log('minting...');
+        const contract = await getContract;
+        const address = `0x${ks.addresses[0]}`;
+        const privateKey = await ks.getPrivateKey();
+        const account = web3.eth.accounts.privateKeyToAccount('0x' + privateKey);
+        web3.eth.accounts.wallet.add(account);
 
-      console.log('minting...');
-      const contract = await getContract;
-      const address = `0x${ks.addresses[0]}`;
-      const privateKey = await ks.getPrivateKey();
-      // console.log('got pk', privateKey);
-      // web3.eth.accounts.wallet.add('0x' + Buffer.from(privateKey).toString('hex'));
-      const account = web3.eth.accounts.privateKeyToAccount('0x' + privateKey);
-      web3.eth.accounts.wallet.add(account);
+        const nonce = await web3.eth.getTransactionCount(address);
+        const gasPrice = await web3.eth.getGasPrice();
+        // const value = '10000000000000000'; // 0.01 ETH
 
-      const nonce = await web3.eth.getTransactionCount(address);
-      const gasPrice = await web3.eth.getGasPrice();
-      // const value = '10000000000000000'; // 0.01 ETH
+        const m = contract.methods.mint(1, 'hash', metadataHash);
+        const o = {
+          gas: 0,
+          from: address,
+          nonce,
+          // value,
+        };
+        o.gas = await m.estimateGas(o);
+        const receipt = await m.send(o);
+        const id = parseInt(receipt.events.URI.returnValues[1], 10);
+        console.log(`${tokenHost}/${id}`);
+        console.log(`https://${network}.opensea.io/assets/${contract._address}/${id}`);
+      } else {
+        console.warn('no manifest.json in package');
+      }
 
-      const m = contract.methods.mint(1, 'hash', metadataHash);
-      const o = {
-        gas: 0,
-        from: address,
-        nonce,
-        // value,
-      };
-      o.gas = await m.estimateGas(o);
-      const receipt = await m.send(o);
-      const id = parseInt(receipt.events.URI.returnValues[1], 10);
-      console.log(`${tokenHost}/${id}`);
-      console.log(`https://${network}.opensea.io/assets/${contract._address}/${id}`);
+
+      /* for (const url of bundle.urls) {
+        const response = ;
+        console.log(url);
+        files.push({
+          url,
+          // status: response.status,
+          // headers: response.headers,
+          response,
+          // body: response.body.toString('utf-8')
+        });
+      } */
     } else {
       _printNotLoggedIn();
     }
