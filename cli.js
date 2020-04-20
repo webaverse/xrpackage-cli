@@ -651,15 +651,19 @@ yargs
             }
           })();
           if (j) {
-            if (typeof j.xr_type === 'string' && typeof j.start_url === 'string') {
+            const hasXrType = typeof j.xr_type === 'string';
+            const hasStartUrl = j.start_url === 'string';
+            if (hasXrType && hasStartUrl) {
               xrType = j.xr_type;
               startUrl = j.start_url;
               mimeType = xrTypeToMimeType[xrType] || 'application/octet-stream';
               fileInput = path.join(path.dirname(input), startUrl);
               description = 'Directory package';
               directory = path.dirname(input);
-            } else {
-              console.warn(`manifest.json missing xr_type and start_url: ${input}`);
+            } else if (!hasXrType) {
+              console.warn(`manifest.json missing xr_type: ${input}`);
+            } else if (!hasStartUrl) {
+              console.warn(`manifest.json missing start_url: ${input}`);
             }
           } else {
             console.warn('failed to parse manifest.json: ' + error.stack);
