@@ -652,7 +652,7 @@ yargs
           })();
           if (j) {
             const hasXrType = typeof j.xr_type === 'string';
-            const hasStartUrl = j.start_url === 'string';
+            const hasStartUrl = typeof j.start_url === 'string';
             if (hasXrType && hasStartUrl) {
               xrType = j.xr_type;
               startUrl = j.start_url;
