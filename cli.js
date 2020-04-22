@@ -711,7 +711,7 @@ yargs
               const filename = path.join(d, filenames[i]);
               const stats = fs.lstatSync(filename);
               if (stats.isFile()) {
-                result.push(filename.slice(rootDirectory.length));
+                result.push(filename.slice(rootDirectory.length).replace( /\\/g, '/' ) );
               } else if (stats.isDirectory()) {
                 _recurse(filename);
               }
