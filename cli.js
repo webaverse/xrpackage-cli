@@ -29,6 +29,7 @@ const network = 'rinkeby';
 const infuraApiKey = '4fb939301ec543a0969f3019d74f80c2';
 const rpcUrl = `https://${network}.infura.io/v3/${infuraApiKey}`;
 const web3 = new Web3(new Web3.providers.HttpProvider(rpcUrl));
+const port = 9999;
 
 const getContract = Promise.all([
   fetch(`https://contracts.webaverse.com/address.js`).then(res => res.text()).then(s => s.replace(/^export default `(.+?)`[\s\S]*$/, '$1')),
@@ -37,21 +38,6 @@ const getContract = Promise.all([
   // console.log('got address + abi', {address, abi});
   return new web3.eth.Contract(abi, address);
 });
-
-const _getRunUrl = o => {
-  let result;
-  if (o.hash) {
-    result = `https://rawcdn.githack.com/webaverse/xrpackage/${o.hash}/run.html`;
-  } else {
-    result = `https://xrpackage.org/run.html`;
-  }
-  if (o.id) {
-    result += `?i=${o.id}`;
-  } else if (o.url) {
-    result += `?u=${o.url}`;
-  }
-  return result;
-};
 
 /* loadPromise.then(c => {
   const m = c.methods.mint([1, 1, 1], '0x0', 'hash', 'lol');
@@ -484,27 +470,53 @@ yargs
   })
   .command('run [id]', 'run a package in browser', yargs => {
     yargs
-      .option('hash', {
-        alias: 'h',
+      .option('path', {
+        alias: 'p',
         type: 'string',
-        description: 'Use git hash for laucnehd runtime'
+        description: 'Use local xrpackage path for runtime'
       })
   }, async argv => {
     handled = true;
 
+    const app = express();
+    app.use((req, res, next) => {
+      res.set('Access-Control-Allow-Origin', '*');
+      res.set('Access-Control-Allow-Methods', '*');
+      res.set('Access-Control-Allow-Headers', '*');
+      next();
+    });
+
+    const _getRunUrl = o => {
+      let url;
+      let servePath;
+      if (o.path) {
+        url = `http://localhost:${port}/run.html`;
+        servePath = o.path;
+      } else {
+        url = `https://xrpackage.org/run.html`;
+        servePath = null;
+      }
+      if (o.id) {
+        url += `?i=${o.id}`;
+      } else if (o.url) {
+        url += `?u=${o.url}`;
+      }
+      return {
+        url,
+        servePath,
+      };
+    };
+
+    let runSpec;
     if (!isNaN(parseInt(argv.id, 10))) {
-      const u = _getRunUrl({
-        hash: argv.hash,
+      runSpec = _getRunUrl({
+        path: argv.path,
         id: argv.id,
       });
-      opn(u);
     } else {
-      const app = express();
-      app.use((req, res, next) => {
-        res.set('Access-Control-Allow-Origin', '*');
-        res.set('Access-Control-Allow-Methods', '*');
-        res.set('Access-Control-Allow-Headers', '*');
-        next();
+      runSpec = _getRunUrl({
+        path: argv.path,
+        url: `http://localhost:${port}/a.wbn`,
       });
       app.get('/a.wbn', (req, res) => {
         const rs = fs.createReadStream(argv.id);
@@ -514,17 +526,16 @@ yargs
           res.end(err.stack);
         });
       });
-      app.use(express.static(__dirname));
-      const port = 9999;
-      const server = http.createServer(app);
-      server.listen(port, () => {
-        const u = _getRunUrl({
-          hash: argv.hash,
-          url: `http://localhost:${port}/a.wbn`,
-        });
-        opn(u);
-      });
     }
+    const {url, servePath} = runSpec;
+    if (servePath) {
+      app.use(express.static(servePath));
+    }
+
+    const server = http.createServer(app);
+    server.listen(port, () => {
+      opn(url);
+    });
   })
   .command('install [id]', 'install package with given id', yargs => {
     yargs
@@ -801,7 +812,6 @@ yargs
       const glbPromise = makePromise();
       app.put('/a.glb', _readIntoPromise('glb', glbPromise));
       app.use(express.static(__dirname));
-      const port = 9999;
       const server = http.createServer(app);
       const connections = [];
       server.on('connection', c => {
