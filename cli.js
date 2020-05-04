@@ -38,6 +38,21 @@ const getContract = Promise.all([
   return new web3.eth.Contract(abi, address);
 });
 
+const _getRunUrl = o => {
+  let result;
+  if (o.hash) {
+    result = `https://rawcdn.githack.com/webaverse/xrpackage/${o.hash}/run.html`;
+  } else {
+    result = `https://xrpackage.org/run.html`;
+  }
+  if (o.id) {
+    result += `?i=${o.id}`;
+  } else if (o.url) {
+    result += `?u=${o.url}`;
+  }
+  return result;
+};
+
 /* loadPromise.then(c => {
   const m = c.methods.mint([1, 1, 1], '0x0', 'hash', 'lol');
   console.log('got c', Object.keys(c), Object.keys(c.methods.mint), Object.keys(m), m.encodeABI());
@@ -469,15 +484,20 @@ yargs
   })
   .command('run [id]', 'run a package in browser', yargs => {
     yargs
-      /* .positional('id', {
-        describe: 'id of package to install',
-        // default: 5000
-      }) */
+      .option('hash', {
+        alias: 'h',
+        type: 'string',
+        description: 'Use git hash for laucnehd runtime'
+      })
   }, async argv => {
     handled = true;
 
     if (!isNaN(parseInt(argv.id, 10))) {
-      opn(`https://xrpackage.org/run.html?i=${argv.id}`);
+      const u = _getRunUrl({
+        hash: argv.hash,
+        id: argv.id,
+      });
+      opn(u);
     } else {
       const app = express();
       app.use((req, res, next) => {
@@ -498,7 +518,11 @@ yargs
       const port = 9999;
       const server = http.createServer(app);
       server.listen(port, () => {
-        opn(`https://xrpackage.org/run.html?u=http://localhost:${port}/a.wbn`);
+        const u = _getRunUrl({
+          hash: argv.hash,
+          url: `http://localhost:${port}/a.wbn`,
+        });
+        opn(u);
       });
     }
   })
