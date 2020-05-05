@@ -193,6 +193,54 @@ const _importKeyStore = async (s, password) => {
 const _printNotLoggedIn = () => {
   console.warn('not logged in; use xrpk login');
 };
+const _screenshotApp = async output => {
+  const app = express();
+  app.use((req, res, next) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', '*');
+    res.set('Access-Control-Allow-Headers', '*');
+    next();
+  });
+  app.get('/a.wbn', (req, res) => {
+    fs.createReadStream(output).pipe(res);
+  });
+  const gifPromise = makePromise();
+  const _readIntoPromise = (type, p) => (req, res) => {
+    // console.log(`got ${type} request`);
+
+    const bs = [];
+    req.on('data', d => {
+      bs.push(d);
+    });
+    req.once('end', () => {
+      const d = Buffer.concat(bs);
+      p.accept(d);
+      res.end();
+    });
+    req.once('error', p.reject);
+  };
+  app.put('/a.gif', _readIntoPromise('gif', gifPromise));
+  const glbPromise = makePromise();
+  app.put('/a.glb', _readIntoPromise('glb', glbPromise));
+  app.use(express.static(__dirname));
+  const server = http.createServer(app);
+  const connections = [];
+  server.on('connection', c => {
+    connections.push(c);
+  });
+  server.listen(port, () => {
+    opn(`https://xrpackage.org/screenshot.html?srcWbn=http://localhost:${port}/a.wbn&dstGif=http://localhost:${port}/a.gif&dstGlb=http://localhost:${port}/a.glb`);
+  });
+
+  const [gifUint8Array, glbUint8Array] = await Promise.all([gifPromise, glbPromise]);
+  server.close();
+  for (let i = 0; i < connections.length; i++) {
+    connections[i].destroy();
+  }
+
+  fs.writeFileSync(output + '.gif', gifUint8Array);
+  fs.writeFileSync(output + '.glb', glbUint8Array);
+};
 
 let handled = false;
 yargs
@@ -609,6 +657,11 @@ yargs
       .positional('output', {
         describe: 'output file to write',
         // default: 5000
+      })
+      .option('screenshot', {
+        alias: 's',
+        type: 'boolean',
+        description: 'Screenshot package after building'
       });
   }, async argv => {
     handled = true;
@@ -782,54 +835,11 @@ yargs
       const uint8Array = builder.createBundle();
       // console.log('got bundle', uint8Array.byteLength);
 
-      const app = express();
-      app.use((req, res, next) => {
-        res.set('Access-Control-Allow-Origin', '*');
-        res.set('Access-Control-Allow-Methods', '*');
-        res.set('Access-Control-Allow-Headers', '*');
-        next();
-      });
-      app.get('/a.wbn', (req, res) => {
-        // console.log('got wbn request');
-        res.end(uint8Array);
-      });
-      const gifPromise = makePromise();
-      const _readIntoPromise = (type, p) => (req, res) => {
-        // console.log(`got ${type} request`);
-
-        const bs = [];
-        req.on('data', d => {
-          bs.push(d);
-        });
-        req.once('end', () => {
-          const d = Buffer.concat(bs);
-          p.accept(d);
-          res.end();
-        });
-        req.once('error', p.reject);
-      };
-      app.put('/a.gif', _readIntoPromise('gif', gifPromise));
-      const glbPromise = makePromise();
-      app.put('/a.glb', _readIntoPromise('glb', glbPromise));
-      app.use(express.static(__dirname));
-      const server = http.createServer(app);
-      const connections = [];
-      server.on('connection', c => {
-        connections.push(c);
-      });
-      server.listen(port, () => {
-        opn(`https://xrpackage.org/screenshot.html?srcWbn=http://localhost:${port}/a.wbn&dstGif=http://localhost:${port}/a.gif&dstGlb=http://localhost:${port}/a.glb`);
-      });
-
-      const [gifUint8Array, glbUint8Array] = await Promise.all([gifPromise, glbPromise]);
-      server.close();
-      for (let i = 0; i < connections.length; i++) {
-        connections[i].destroy();
-      }
-
       fs.writeFileSync(argv.output, uint8Array);
-      fs.writeFileSync(argv.output + '.gif', gifUint8Array);
-      fs.writeFileSync(argv.output + '.glb', glbUint8Array);
+
+      if (argv.screenshot) {
+        await _screenshotApp(argv.output);
+      }
       console.log(argv.output);
     }
   })
