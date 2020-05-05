@@ -843,6 +843,20 @@ yargs
       console.log(argv.output);
     }
   })
+  .command('screenshot [input]', 'generate a screenshot of the package at [input]', yargs => {
+    yargs
+      .positional('input', {
+        describe: 'built package to screenshot (a.wbn)',
+      });
+  }, async argv => {
+    handled = true;
+
+    if (typeof argv.input !== 'string') {
+      argv.input = 'a.wbn';
+    }
+
+    await _screenshotApp(argv.input);
+  })
   .command('view [input]', 'view contents of input .wbn file', yargs => {
     yargs
       .positional('input', {
