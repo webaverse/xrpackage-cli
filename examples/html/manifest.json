@@ -1,6 +1,4 @@
 {
-  "name": "WebXR Cube",
-  "description": "Example XRPackage application",
   "xr_type": "webxr-site@0.0.1",
   "start_url": "cube.html"
 }
