@@ -908,7 +908,9 @@ yargs
     } else {
       console.warn('missing input file');
     }
-  }).argv;
+  })
+  .showHelpOnFail(false)
+  .argv;
 if (!handled) {
   yargs.showHelp();
 }
