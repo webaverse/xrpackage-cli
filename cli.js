@@ -749,22 +749,22 @@ yargs
               description = 'Directory package';
               directory = path.dirname(input);
             } else if (!hasXrType) {
-              console.warn(`manifest.json missing xr_type: ${input}`);
+              throw `manifest.json missing xr_type: ${input}`;
             } else if (!hasStartUrl) {
-              console.warn(`manifest.json missing start_url: ${input}`);
+              throw `manifest.json missing start_url: ${input}`;
             }
           } else {
-            console.warn('failed to parse manifest.json: ' + error.stack);
+            throw 'failed to parse manifest.json: ' + error.stack;
           }
         } else {
-          console.warn('missing manifest.json; try xrpk init');
+          throw 'missing manifest.json; try xrpk init';
         }
       } else {
         const stats = fs.statSync(input);
         if (stats.isDirectory()) {
           _detectType(path.join(input, 'manifest.json'));
         } else {
-          throw new Error(`unknown file type: ${argv.input}`);
+          throw `unknown file type: ${argv.input}`;
         }
       }
     };
