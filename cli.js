@@ -21,7 +21,7 @@ const wbn = require('wbn');
 const lightwallet = require('./eth-lightwallet');
 const Web3 = require('./web3');
 const express = require('express');
-const opn = require('opn');
+const open = require('open');
 
 const apiHost = `https://ipfs.exokit.org/ipfs`;
 const tokenHost = `https://tokens.webaverse.com`;
