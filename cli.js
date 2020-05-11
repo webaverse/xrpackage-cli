@@ -229,7 +229,7 @@ const _screenshotApp = async output => {
     connections.push(c);
   });
   server.listen(port, () => {
-    opn(`https://xrpackage.org/screenshot.html?srcWbn=http://localhost:${port}/a.wbn&dstGif=http://localhost:${port}/a.gif&dstGlb=http://localhost:${port}/a.glb`);
+    open(`https://xrpackage.org/screenshot.html?srcWbn=http://localhost:${port}/a.wbn&dstGif=http://localhost:${port}/a.gif&dstGlb=http://localhost:${port}/a.glb`);
   });
 
   const [gifUint8Array, glbUint8Array] = await Promise.all([gifPromise, glbPromise]);
@@ -582,7 +582,7 @@ yargs
 
     const server = http.createServer(app);
     server.listen(port, () => {
-      opn(url);
+      open(url);
     });
   })
   .command('install [id]', 'install package with given id', yargs => {
