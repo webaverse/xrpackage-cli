@@ -261,8 +261,8 @@ const _screenshotApp = async output => {
     }
   }
 
-  builder.addExchange(primaryUrl + '/xrpackage_icon.png', 200, {
-    'Content-Type': 'image/png',
+  builder.addExchange(primaryUrl + '/xrpackage_icon.gif', 200, {
+    'Content-Type': 'image/gif',
   }, gifUint8Array);
   builder.addExchange(primaryUrl + '/xrpackage_icon.glb', 200, {
     'Content-Type': 'gltf-binary',
@@ -271,11 +271,11 @@ const _screenshotApp = async output => {
   if (!Array.isArray(manifestJson.icons)) {
     manifestJson.icons = [];
   }
-  let gifIcon = manifestJson.icons.find(icon => icon.type === 'image/png');
+  let gifIcon = manifestJson.icons.find(icon => icon.type === 'image/gif');
   if (!gifIcon) {
     gifIcon = {
-      src: 'xrpackage_icon.png',
-      'type': 'image/png',
+      src: 'xrpackage_icon.gif',
+      'type': 'image/gif',
     };
     manifestJson.icons.push(gifIcon);
   }
