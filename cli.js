@@ -828,7 +828,7 @@ yargs
       }
 
       const primaryUrl = `https://xrpackage.org`;
-      const builder = (new wbn.BundleBuilder(primaryUrl + '/' + startUrl))
+      const builder = new wbn.BundleBuilder(primaryUrl + '/' + startUrl);
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const {url, type, data} = file;
