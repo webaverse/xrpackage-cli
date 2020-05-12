@@ -862,12 +862,15 @@ yargs
           const _recurse = d => {
             const filenames = fs.readdirSync(d);
             for (let i = 0; i < filenames.length; i++) {
-              const filename = path.join(d, filenames[i]);
-              const stats = fs.lstatSync(filename);
-              if (stats.isFile()) {
-                result.push(filename.slice(rootDirectory.length).replace( /\\/g, '/' ) );
-              } else if (stats.isDirectory()) {
-                _recurse(filename);
+              const filename = filenames[i];
+              if (filename !== '.git') {
+                const pathname = path.join(d, filename);
+                const stats = fs.lstatSync(pathname);
+                if (stats.isFile()) {
+                  result.push(pathname.slice(rootDirectory.length).replace(/\\/g, '/'));
+                } else if (stats.isDirectory()) {
+                  _recurse(pathname);
+                }
               }
             }
           };
