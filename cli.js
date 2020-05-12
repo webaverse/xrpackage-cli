@@ -866,8 +866,11 @@ yargs
             includeEmpty: false, // true to include empty dirs, default false
             follow: false, // true to follow symlink dirs, default false
           });
+          const cwd = process.cwd();
+          const outputPathname = path.resolve(cwd, argv.output);
           for (const pathname of paths) {
-            if (!/^\.git\//.test(pathname)) {
+            const fullPathname = path.resolve(cwd, pathname);
+            if (!/^\.git\//.test(pathname) && fullPathname !== outputPathname) {
               const stats = fs.lstatSync(pathname);
               if (stats.isFile()) {
                 result.push('/' + pathname);
