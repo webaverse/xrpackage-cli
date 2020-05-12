@@ -24,6 +24,7 @@
     "bignumber.js": "^9.0.0",
     "btoa": "^1.2.1",
     "express": "^4.17.1",
+    "ignore-walk": "^3.0.3",
     "mime": "^2.4.4",
     "mkdirp": "^1.0.4",
     "node-blob": "0.0.2",
