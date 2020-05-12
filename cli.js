@@ -954,14 +954,14 @@ yargs
       console.warn('missing input file');
     }
   })
-  .command('cat [input] [path]', 'cat contents of file inside a .wbn to stdout', yargs => {
+  .command('cat [input] [path]', 'cat contents of file inside .wbn to stdout', yargs => {
     yargs
       .positional('input', {
         describe: 'input .wbn file',
         // default: 5000
       })
       .positional('path', {
-        describe: 'path inside .wbn file to cat',
+        describe: 'file path inside the .wbn cat',
         // default: 5000
       });
   }, async argv => {
