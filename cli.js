@@ -965,7 +965,7 @@ yargs
         // default: 5000
       })
       .positional('path', {
-        describe: 'file path inside the .wbn cat',
+        describe: 'file path inside the .wbn to cat',
         // default: 5000
       });
   }, async argv => {
