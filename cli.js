@@ -347,6 +347,10 @@ yargs
   }, async argv => {
     handled = true;
 
+    if (typeof argv.input !== 'string') {
+      argv.input = 'a.wbn';
+    }
+
     const ks = await getKs();
     if (ks) {
       const dataArrayBuffer = fs.readFileSync(argv.input);
