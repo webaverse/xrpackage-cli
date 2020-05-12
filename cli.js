@@ -870,7 +870,7 @@ yargs
             if (!/^\.git\//.test(pathname)) {
               const stats = fs.lstatSync(pathname);
               if (stats.isFile()) {
-                result.push(pathname);
+                result.push('/' + pathname);
               }
             }
           }
