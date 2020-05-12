@@ -810,7 +810,7 @@ yargs
             const hasStartUrl = typeof j.start_url === 'string';
             if (hasXrType && hasStartUrl) {
               xrType = j.xr_type;
-              startUrl = j.start_url;
+              startUrl = j.start_url.replace(/(?:\?|\#).*$/, '');
               mimeType = xrTypeToMimeType[xrType] || 'application/octet-stream';
               fileInput = path.join(path.dirname(input), startUrl);
               description = 'Directory package';
