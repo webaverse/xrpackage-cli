@@ -239,8 +239,61 @@ const _screenshotApp = async output => {
     connections[i].destroy();
   }
 
-  fs.writeFileSync(output + '.gif', gifUint8Array);
-  fs.writeFileSync(output + '.glb', glbUint8Array);
+  const bundleBuffer = fs.readFileSync(output);
+  const bundle = new wbn.Bundle(bundleBuffer);
+
+  const res = bundle.getResponse('https://xrpackage.org/manifest.json');
+  const s = res.body.toString('utf8');
+  const manifestJson = JSON.parse(s);
+  const {start_url: startUrl} = manifestJson;
+
+  const primaryUrl = 'https://xrpackage.org';
+  const builder = new wbn.BundleBuilder(primaryUrl + '/' + startUrl);
+  for (const u of bundle.urls) {
+    const {pathname} = new url.URL(u);
+    if (pathname !== '/manifest.json') {
+      const res = bundle.getResponse(u);
+      const type = res.headers['content-type'];
+      const data = res.body;
+      builder.addExchange(primaryUrl + pathname, 200, {
+        'Content-Type': type,
+      }, data);
+    }
+  }
+
+  builder.addExchange(primaryUrl + '/xrpackage_icon.png', 200, {
+    'Content-Type': 'image/png',
+  }, gifUint8Array);
+  builder.addExchange(primaryUrl + '/xrpackage_icon.glb', 200, {
+    'Content-Type': 'gltf-binary',
+  }, glbUint8Array);
+
+  if (!Array.isArray(manifestJson.icons)) {
+    manifestJson.icons = [];
+  }
+  let gifIcon = manifestJson.icons.find(icon => icon.type === 'image/png');
+  if (!gifIcon) {
+    gifIcon = {
+      src: 'xrpackage_icon.png',
+      'type': 'image/png',
+    };
+    manifestJson.icons.push(gifIcon);
+  }
+  let glbIcon = manifestJson.icons.find(icon => icon.type === 'model/gltf-binary');
+  if (!glbIcon) {
+    glbIcon = {
+      src: 'xrpackage_icon.glb',
+      'type': 'model/gltf-binary',
+    };
+    manifestJson.icons.push(glbIcon);
+  }
+
+  builder.addExchange(primaryUrl + '/manifest.json', 200, {
+    'Content-Type': 'application/json',
+  }, JSON.stringify(manifestJson, null, 2));
+
+  const buffer = builder.createBundle();
+  fs.writeFileSync(output, buffer);
 };
 
 let handled = false;
