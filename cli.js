@@ -933,24 +933,26 @@ yargs
       .positional('input', {
         describe: 'input .wbn file to view',
         // default: 5000
-      });
+      })
+      .option('types', {
+        alias: 't',
+        type: 'boolean',
+        description: 'Show file types as well'
+      })
   }, async argv => {
     handled = true;
 
     if (argv.input) {
       const d = fs.readFileSync(argv.input);
       const bundle = new wbn.Bundle(d);
-      const files = [];
       for (const url of bundle.urls) {
-        const response = bundle.getResponse(url);
-        console.log(url);
-        files.push({
-          url,
-          // status: response.status,
-          // headers: response.headers,
-          response,
-          // body: response.body.toString('utf-8')
-        });
+        const res = bundle.getResponse(url);
+        let s = url;
+        if (argv.types) {
+          s += ' ';
+          s += res.headers['content-type'] || 'unknown';
+        }
+        console.log(s);
       }
     } else {
       console.warn('missing input file');
