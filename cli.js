@@ -869,11 +869,14 @@ yargs
           const cwd = process.cwd();
           const outputPathname = path.resolve(cwd, argv.output);
           for (const pathname of paths) {
-            const fullPathname = path.resolve(cwd, pathname);
+            const fullPathname = path.resolve(cwd, rootDirectory, pathname);
             if (!/^\.git\//.test(pathname) && fullPathname !== outputPathname) {
-              const stats = fs.lstatSync(pathname);
+              const stats = fs.lstatSync(fullPathname);
               if (stats.isFile()) {
-                result.push('/' + pathname);
+                result.push({
+                  fullPathname: fullPathname,
+                  pathname: '/' + pathname,
+                });
               }
             }
           }
@@ -881,12 +884,12 @@ yargs
         };
         const filenames = _readdirRecursive(directory);
         for (let i = 0; i < filenames.length; i++) {
-          const f = filenames[i];
-          if (!files.some(({url}) => url === f)) {
-            const type = mime.getType(f) || 'application/octet-stream';
-            const data = fs.readFileSync(path.join(directory, f));
+          const {fullPathname, pathname} = filenames[i];
+          if (!files.some(({url}) => url === pathname)) {
+            const type = mime.getType(fullPathname) || 'application/octet-stream';
+            const data = fs.readFileSync(fullPathname);
             files.push({
-              url: f,
+              url: pathname,
               type,
               data,
             });
