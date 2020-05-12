@@ -14,6 +14,7 @@ const mkdirp = require('mkdirp');
 const yargs = require('yargs');
 const fetch = require('node-fetch');
 const mime = require('mime');
+const ignoreWalk = require('ignore-walk')
 const wbn = require('wbn');
 /* const ethereumjs = {
   Tx: require('ethereumjs-tx').Transaction,
@@ -859,22 +860,20 @@ yargs
       if (directory) {
         const _readdirRecursive = rootDirectory => {
           const result = [];
-          const _recurse = d => {
-            const filenames = fs.readdirSync(d);
-            for (let i = 0; i < filenames.length; i++) {
-              const filename = filenames[i];
-              if (filename !== '.git') {
-                const pathname = path.join(d, filename);
-                const stats = fs.lstatSync(pathname);
-                if (stats.isFile()) {
-                  result.push(pathname.slice(rootDirectory.length).replace(/\\/g, '/'));
-                } else if (stats.isDirectory()) {
-                  _recurse(pathname);
-                }
+          const paths = ignoreWalk.sync({
+            path: rootDirectory, // root dir to start in. defaults to process.cwd()
+            ignoreFiles: ['.gitignore'], // list of filenames. defaults to ['.ignore']
+            includeEmpty: false, // true to include empty dirs, default false
+            follow: false, // true to follow symlink dirs, default false
+          });
+          for (const pathname of paths) {
+            if (!/^\.git\//.test(pathname)) {
+              const stats = fs.lstatSync(pathname);
+              if (stats.isFile()) {
+                result.push(pathname);
               }
             }
-          };
-          _recurse(rootDirectory);
+          }
           return result;
         };
         const filenames = _readdirRecursive(directory);
