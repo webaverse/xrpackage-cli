@@ -261,18 +261,15 @@ const _screenshotApp = async output => {
     }
   }
 
-  builder.addExchange(primaryUrl + '/xrpackage_icon.gif', 200, {
-    'Content-Type': 'image/gif',
-  }, gifUint8Array);
-  builder.addExchange(primaryUrl + '/xrpackage_icon.glb', 200, {
-    'Content-Type': 'gltf-binary',
-  }, glbUint8Array);
-
   if (!Array.isArray(manifestJson.icons)) {
     manifestJson.icons = [];
   }
   let gifIcon = manifestJson.icons.find(icon => icon.type === 'image/gif');
   if (!gifIcon) {
+    builder.addExchange(primaryUrl + '/xrpackage_icon.gif', 200, {
+      'Content-Type': 'image/gif',
+    }, gifUint8Array);
+
     gifIcon = {
       src: 'xrpackage_icon.gif',
       'type': 'image/gif',
@@ -281,6 +278,10 @@ const _screenshotApp = async output => {
   }
   let glbIcon = manifestJson.icons.find(icon => icon.type === 'model/gltf-binary');
   if (!glbIcon) {
+    builder.addExchange(primaryUrl + '/xrpackage_icon.glb', 200, {
+      'Content-Type': 'gltf-binary',
+    }, glbUint8Array);
+
     glbIcon = {
       src: 'xrpackage_icon.glb',
       'type': 'model/gltf-binary',
