@@ -261,32 +261,39 @@ const _screenshotApp = async output => {
     }
   }
 
-  if (!Array.isArray(manifestJson.icons)) {
-    manifestJson.icons = [];
-  }
-  let gifIcon = manifestJson.icons.find(icon => icon.type === 'image/gif');
-  if (!gifIcon) {
-    builder.addExchange(primaryUrl + '/xrpackage_icon.gif', 200, {
-      'Content-Type': 'image/gif',
-    }, gifUint8Array);
+  if (gifUint8Array.length > 0) {
+    let gifIcon = manifestJson.icons && manifestJson.icons.find(icon => icon.type === 'image/gif');
+    if (!gifIcon) {
+      builder.addExchange(primaryUrl + '/xrpackage_icon.gif', 200, {
+        'Content-Type': 'image/gif',
+      }, gifUint8Array);
 
-    gifIcon = {
-      src: 'xrpackage_icon.gif',
-      'type': 'image/gif',
-    };
-    manifestJson.icons.push(gifIcon);
+      gifIcon = {
+        src: 'xrpackage_icon.gif',
+        'type': 'image/gif',
+      };
+      if (!Array.isArray(manifestJson.icons)) {
+        manifestJson.icons = [];
+      }
+      manifestJson.icons.push(gifIcon);
+    }
   }
-  let glbIcon = manifestJson.icons.find(icon => icon.type === 'model/gltf-binary');
-  if (!glbIcon) {
-    builder.addExchange(primaryUrl + '/xrpackage_icon.glb', 200, {
-      'Content-Type': 'gltf-binary',
-    }, glbUint8Array);
+  if (glbUint8Array.length > 0) {
+    let glbIcon = manifestJson.icons && manifestJson.icons.find(icon => icon.type === 'model/gltf-binary');
+    if (!glbIcon) {
+      builder.addExchange(primaryUrl + '/xrpackage_icon.glb', 200, {
+        'Content-Type': 'gltf-binary',
+      }, glbUint8Array);
 
-    glbIcon = {
-      src: 'xrpackage_icon.glb',
-      'type': 'model/gltf-binary',
-    };
-    manifestJson.icons.push(glbIcon);
+      glbIcon = {
+        src: 'xrpackage_icon.glb',
+        'type': 'model/gltf-binary',
+      };
+      if (!Array.isArray(manifestJson.icons)) {
+        manifestJson.icons = [];
+      }
+      manifestJson.icons.push(glbIcon);
+    }
   }
 
   builder.addExchange(primaryUrl + '/manifest.json', 200, {
