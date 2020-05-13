@@ -978,7 +978,7 @@ yargs
       if (argv.path) {
         const d = fs.readFileSync(argv.input);
         const bundle = new wbn.Bundle(d);
-        const p = path.normalize(path.join('/', argv.path));
+        const p = path.normalize(path.join('/', argv.path)).replace(/\\/g, '/');
         const u = bundle.urls.find(u => new url.URL(u).pathname === p);
         if (u) {
           const res = bundle.getResponse(u);
