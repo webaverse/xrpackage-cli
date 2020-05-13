@@ -73,6 +73,7 @@ function makePromise() {
   p.reject = reject;
   return p;
 }
+const _removeUrlTail = u => u.replace(/(?:\?|\#).*$/, '');
 async function getKs() {
   const ksString = (() => {
     try {
@@ -810,9 +811,9 @@ yargs
             const hasStartUrl = typeof j.start_url === 'string';
             if (hasXrType && hasStartUrl) {
               xrType = j.xr_type;
-              startUrl = j.start_url.replace(/(?:\?|\#).*$/, '');
+              startUrl = j.start_url;
               mimeType = xrTypeToMimeType[xrType] || 'application/octet-stream';
-              fileInput = path.join(path.dirname(input), startUrl);
+              fileInput = path.join(path.dirname(input), _removeUrlTail(startUrl));
               description = 'Directory package';
               directory = path.dirname(input);
             } else if (!hasXrType) {
