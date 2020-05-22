@@ -402,6 +402,49 @@ yargs
     }
     await p3;
   })
+  .command('upload [input]', 'upload a package without registry', yargs => {
+    yargs
+      .positional('input', {
+        describe: '.wbn package to upload',
+        // default: 5000
+      })
+  }, async argv => {
+    handled = true;
+
+    if (typeof argv.input !== 'string') {
+      argv.input = 'a.wbn';
+    }
+
+    const dataArrayBuffer = fs.readFileSync(argv.input);
+    const bundle = new wbn.Bundle(dataArrayBuffer);
+    if (bundle.urls.includes('https://xrpackage.org/manifest.json')) {
+      // const screenshotBlob = fs.readFileSync(argv.input + '.gif');
+      // const modelBlob = fs.readFileSync(argv.input + '.glb');
+
+      const response = bundle.getResponse('https://xrpackage.org/manifest.json');
+      const s = response.body.toString('utf-8');
+      const j = JSON.parse(s);
+      const {name, description} = j;
+
+      const objectName = typeof name === 'string' ? name : path.basename(argv.input);
+      const objectDescription = typeof description === 'string' ? description : `Package for ${path.basename(argv.input)}`;
+
+      console.log('Name:', objectName);
+      console.log('Description:', objectDescription);
+
+      console.log('uploading...');
+      const dataHash = await fetch(`${apiHost}/`, {
+        method: 'PUT',
+        body: dataArrayBuffer,
+      })
+        .then(res => res.json())
+        .then(j => j.hash);
+
+      console.log(`${apiHost}/${dataHash}.wbn`);
+    } else {
+      console.warn('no manifest.json in package');
+    }
+  })
   .command('publish [input]', 'publish a package', yargs => {
     yargs
       .positional('input', {
