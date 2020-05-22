@@ -741,7 +741,7 @@ yargs
       argv.output = 'a.wbn';
     }
 
-    let fileInput, startUrl, xrType, mimeType, description, directory;
+    let fileInput, startUrl, xrType, xrDetails, mimeType, description, directory;
     const xrTypeToMimeType = {
       'gltf@0.0.1': 'model/gltf+json',
       'vrm@0.0.1': 'application/octet-stream',
@@ -752,6 +752,7 @@ yargs
       if (/\.gltf$/.test(input)) {
         fileInput = input;
         xrType = 'gltf@0.0.1';
+        xrDetails = {};
         startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
         description = 'GLTF JSON model';
@@ -759,6 +760,7 @@ yargs
       } else if (/\.glb$/.test(input)) {
         fileInput = input;
         xrType = 'gltf@0.0.1';
+        xrDetails = {};
         startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
         description = 'GLTF binary model';
@@ -766,6 +768,7 @@ yargs
       } else if (/\.vrm$/.test(input)) {
         fileInput = input;
         xrType = 'vrm@0.0.1';
+        xrDetails = {};
         startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
         description = 'VRM model';
@@ -773,6 +776,7 @@ yargs
       } else if (/\.vox$/.test(input)) {
         fileInput = input;
         xrType = 'vox@0.0.1';
+        xrDetails = {};
         startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
         description = 'VOX model';
@@ -780,6 +784,7 @@ yargs
       } else if (/\.html$/.test(input)) {
         fileInput = input;
         xrType = 'webxr-site@0.0.1';
+        xrDetails = {};
         startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
         description = 'WebXR app';
@@ -811,7 +816,8 @@ yargs
             const hasStartUrl = typeof j.start_url === 'string';
             if (hasXrType && hasStartUrl) {
               xrType = j.xr_type;
-              startUrl = j.start_url;
+              xrDetails = j.xr_details;
+              startUrl = j.start_url.replace(/(?:\?|\#).*$/, '');
               mimeType = xrTypeToMimeType[xrType] || 'application/octet-stream';
               fileInput = path.join(path.dirname(input), _removeUrlTail(startUrl));
               description = 'Directory package';
@@ -855,6 +861,7 @@ yargs
             description,
             xr_type: xrType,
             start_url: startUrl,
+            xr_details: xrDetails,
           }, null, 2),
         },
       ];
