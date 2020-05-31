@@ -406,7 +406,7 @@ const _modelApp = async output => {
       default: {
         modelPath = 'xrpackage_model.glb';
 
-        const modelUint8Array = fs.readFileSync('./assets/w.glb');
+        const modelUint8Array = fs.readFileSync(path.join(__dirname, 'assets', 'w.glb'));
         builder.addExchange(primaryUrl + '/' + modelPath, 200, {
           'Content-Type': 'model/gltf-binary',
         }, modelUint8Array);
