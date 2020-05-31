@@ -222,9 +222,7 @@ const _screenshotApp = async output => {
     });
     req.once('error', p.reject);
   };
-  app.put('/a.gif', _readIntoPromise('gif', gifPromise));
-  const glbPromise = makePromise();
-  app.put('/a.glb', _readIntoPromise('glb', glbPromise));
+  app.put('/screenshot.gif', _readIntoPromise('gif', gifPromise));
   app.use(express.static(__dirname));
   const server = http.createServer(app);
   const connections = [];
@@ -232,10 +230,10 @@ const _screenshotApp = async output => {
     connections.push(c);
   });
   server.listen(port, () => {
-    open(`https://xrpackage.org/screenshot.html?srcWbn=http://localhost:${port}/a.wbn&dstGif=http://localhost:${port}/a.gif&dstGlb=http://localhost:${port}/a.glb`);
+    open(`https://xrpackage.org/screenshot.html?srcWbn=http://localhost:${port}/a.wbn&dstGif=http://localhost:${port}/screenshot.gif`);
   });
 
-  const [gifUint8Array, glbUint8Array] = await Promise.all([gifPromise, glbPromise]);
+  const [gifUint8Array] = await Promise.all([gifPromise]);
   server.close();
   for (let i = 0; i < connections.length; i++) {
     connections[i].destroy();
@@ -278,23 +276,6 @@ const _screenshotApp = async output => {
         manifestJson.icons = [];
       }
       manifestJson.icons.push(gifIcon);
-    }
-  }
-  if (glbUint8Array.length > 0) {
-    let glbIcon = manifestJson.icons && manifestJson.icons.find(icon => icon.type === 'model/gltf-binary');
-    if (!glbIcon) {
-      builder.addExchange(primaryUrl + '/xrpackage_icon.glb', 200, {
-        'Content-Type': 'gltf-binary',
-      }, glbUint8Array);
-
-      glbIcon = {
-        src: 'xrpackage_icon.glb',
-        'type': 'model/gltf-binary',
-      };
-      if (!Array.isArray(manifestJson.icons)) {
-        manifestJson.icons = [];
-      }
-      manifestJson.icons.push(glbIcon);
     }
   }
 
