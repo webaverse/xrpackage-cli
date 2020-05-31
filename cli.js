@@ -196,6 +196,25 @@ const _importKeyStore = async (s, password) => {
 const _printNotLoggedIn = () => {
   console.warn('not logged in; use xrpk login');
 };
+const _cloneBundle = (bundle, options = {}) => {
+  const except = options.except || [];
+  const urlSpec = new url.URL(bundle.primaryURL);
+  const primaryUrl = urlSpec.origin;
+  const startUrl = urlSpec.pathname.replace(/^\//, '');
+  const builder = new wbn.BundleBuilder(primaryUrl + '/' + startUrl);
+  for (const u of bundle.urls) {
+    const {pathname} = new url.URL(u);
+    if (!except.includes(pathname)) {
+      const res = bundle.getResponse(u);
+      const type = res.headers['content-type'];
+      const data = res.body;
+      builder.addExchange(primaryUrl + pathname, 200, {
+        'Content-Type': type,
+      }, data);
+    }
+  }
+  return builder;
+};
 const _screenshotApp = async output => {
   const app = express();
   app.use((req, res, next) => {
@@ -248,18 +267,9 @@ const _screenshotApp = async output => {
   const {start_url: startUrl} = manifestJson;
 
   const primaryUrl = 'https://xrpackage.org';
-  const builder = new wbn.BundleBuilder(primaryUrl + '/' + startUrl);
-  for (const u of bundle.urls) {
-    const {pathname} = new url.URL(u);
-    if (pathname !== '/manifest.json') {
-      const res = bundle.getResponse(u);
-      const type = res.headers['content-type'];
-      const data = res.body;
-      builder.addExchange(primaryUrl + pathname, 200, {
-        'Content-Type': type,
-      }, data);
-    }
-  }
+  const builder = _cloneBundle(bundle, {
+    except: ['/manifest.json'],
+  });
 
   if (gifUint8Array.length > 0) {
     let gifIcon = manifestJson.icons && manifestJson.icons.find(icon => icon.type === 'image/gif');
@@ -338,18 +348,9 @@ const _volumeApp = async output => {
   const {start_url: startUrl} = manifestJson;
 
   const primaryUrl = 'https://xrpackage.org';
-  const builder = new wbn.BundleBuilder(primaryUrl + '/' + startUrl);
-  for (const u of bundle.urls) {
-    const {pathname} = new url.URL(u);
-    if (pathname !== '/manifest.json') {
-      const res = bundle.getResponse(u);
-      const type = res.headers['content-type'];
-      const data = res.body;
-      builder.addExchange(primaryUrl + pathname, 200, {
-        'Content-Type': type,
-      }, data);
-    }
-  }
+  const builder = _cloneBundle(bundle, {
+    except: ['/manifest.json'],
+  });
 
   if (volumeUint8Array.length > 0) {
     let volumeIcon = manifestJson.icons && manifestJson.icons.find(icon => icon.type === 'model/gltf-binary+preview');
@@ -386,18 +387,9 @@ const _modelApp = async output => {
   const {start_url: startUrl, xr_type: xrType} = manifestJson;
 
   const primaryUrl = 'https://xrpackage.org';
-  const builder = new wbn.BundleBuilder(primaryUrl + '/' + startUrl);
-  for (const u of bundle.urls) {
-    const {pathname} = new url.URL(u);
-    if (pathname !== '/manifest.json') {
-      const res = bundle.getResponse(u);
-      const type = res.headers['content-type'];
-      const data = res.body;
-      builder.addExchange(primaryUrl + pathname, 200, {
-        'Content-Type': type,
-      }, data);
-    }
-  }
+  const builder = _cloneBundle(bundle, {
+    except: ['/manifest.json'],
+  });
 
   let modelIcon = manifestJson.icons && manifestJson.icons.find(icon => icon.type === 'model/gltf-binary');
   if (!modelIcon) {
