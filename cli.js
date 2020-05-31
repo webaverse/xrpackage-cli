@@ -376,6 +376,69 @@ const _volumeApp = async output => {
   const buffer = builder.createBundle();
   fs.writeFileSync(output, buffer);
 };
+const _modelApp = async output => {
+  const bundleBuffer = fs.readFileSync(output);
+  const bundle = new wbn.Bundle(bundleBuffer);
+
+  const res = bundle.getResponse('https://xrpackage.org/manifest.json');
+  const s = res.body.toString('utf8');
+  const manifestJson = JSON.parse(s);
+  const {start_url: startUrl, xr_type: xrType} = manifestJson;
+
+  const primaryUrl = 'https://xrpackage.org';
+  const builder = new wbn.BundleBuilder(primaryUrl + '/' + startUrl);
+  for (const u of bundle.urls) {
+    const {pathname} = new url.URL(u);
+    if (pathname !== '/manifest.json') {
+      const res = bundle.getResponse(u);
+      const type = res.headers['content-type'];
+      const data = res.body;
+      builder.addExchange(primaryUrl + pathname, 200, {
+        'Content-Type': type,
+      }, data);
+    }
+  }
+
+  let modelIcon = manifestJson.icons && manifestJson.icons.find(icon => icon.type === 'model/gltf-binary');
+  if (!modelIcon) {
+    let modelPath;
+    switch (xrType) {
+      case 'gltf@0.0.1':
+      case 'vrm@0.0.1':
+      {
+        /* const res = bundle.getResponse(primaryUrl + '/' + startUrl);
+        return res.body; */
+        modelPath = startUrl;
+        break;
+      }
+      default: {
+        modelPath = 'xrpackage_model.glb';
+
+        const modelUint8Array = fs.readFileSync('./assets/w.glb');
+        builder.addExchange(primaryUrl + '/' + modelPath, 200, {
+          'Content-Type': 'model/gltf-binary',
+        }, modelUint8Array);
+        break;
+      }
+    }
+
+    modelIcon = {
+      src: modelPath,
+      'type': 'model/gltf-binary',
+    };
+    if (!Array.isArray(manifestJson.icons)) {
+      manifestJson.icons = [];
+    }
+    manifestJson.icons.push(modelIcon);
+  }
+
+  builder.addExchange(primaryUrl + '/manifest.json', 200, {
+    'Content-Type': 'application/json',
+  }, JSON.stringify(manifestJson, null, 2));
+
+  const buffer = builder.createBundle();
+  fs.writeFileSync(output, buffer);
+};
 
 let handled = false;
 yargs
@@ -1135,6 +1198,20 @@ yargs
     }
 
     await _volumeApp(argv.input);
+  })
+  .command('model [input]', 'generate a model of the package at [input]', yargs => {
+    yargs
+      .positional('input', {
+        describe: 'built package to model (a.wbn)',
+      });
+  }, async argv => {
+    handled = true;
+
+    if (typeof argv.input !== 'string') {
+      argv.input = 'a.wbn';
+    }
+
+    await _modelApp(argv.input);
   })
   .command('view [input]', 'view contents of input .wbn file', yargs => {
     yargs
