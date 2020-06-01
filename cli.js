@@ -228,7 +228,6 @@ const _screenshotApp = async output => {
   app.get('/a.wbn', (req, res) => {
     fs.createReadStream(output).pipe(res);
   });
-  const gifPromise = makePromise();
   const _readIntoPromise = (type, p) => (req, res) => {
     // console.log(`got ${type} request`);
 
@@ -243,6 +242,7 @@ const _screenshotApp = async output => {
     });
     req.once('error', p.reject);
   };
+  const gifPromise = makePromise();
   app.put('/screenshot.gif', _readIntoPromise('gif', gifPromise));
   app.use(express.static(__dirname));
   const server = http.createServer(app);
