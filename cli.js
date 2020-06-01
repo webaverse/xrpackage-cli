@@ -536,6 +536,39 @@ const _bakeApp = async output => {
     xrDetails.aabb = aabb;
   }
 
+  let modelIcon = manifestJson.icons && manifestJson.icons.find(icon => icon.type === 'model/gltf-binary');
+  if (!modelIcon) {
+    let modelPath;
+    switch (xrType) {
+      case 'gltf@0.0.1':
+      case 'vrm@0.0.1':
+      {
+        /* const res = bundle.getResponse(primaryUrl + '/' + startUrl);
+        return res.body; */
+        modelPath = startUrl;
+        break;
+      }
+      default: {
+        modelPath = 'xrpackage_model.glb';
+
+        const modelUint8Array = fs.readFileSync(path.join(__dirname, 'assets', 'w.glb'));
+        builder.addExchange(primaryUrl + '/' + modelPath, 200, {
+          'Content-Type': 'model/gltf-binary',
+        }, modelUint8Array);
+        break;
+      }
+    }
+
+    modelIcon = {
+      src: modelPath,
+      'type': 'model/gltf-binary',
+    };
+    if (!Array.isArray(manifestJson.icons)) {
+      manifestJson.icons = [];
+    }
+    manifestJson.icons.push(modelIcon);
+  }
+
   builder.addExchange(primaryUrl + '/manifest.json', 200, {
     'Content-Type': 'application/json',
   }, JSON.stringify(manifestJson, null, 2));
