@@ -346,7 +346,6 @@ const _volumeApp = async output => {
   const res = bundle.getResponse('https://xrpackage.org/manifest.json');
   const s = res.body.toString('utf8');
   const manifestJson = JSON.parse(s);
-  const {start_url: startUrl} = manifestJson;
 
   const builder = _cloneBundle(bundle, {
     except: ['/manifest.json'],
