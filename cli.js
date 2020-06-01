@@ -437,6 +437,112 @@ const _modelApp = async output => {
   const buffer = builder.createBundle();
   fs.writeFileSync(output, buffer);
 };
+const _bakeApp = async output => {
+  const app = express();
+  app.use((req, res, next) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', '*');
+    res.set('Access-Control-Allow-Headers', '*');
+    next();
+  });
+  app.get('/a.wbn', (req, res) => {
+    fs.createReadStream(output).pipe(res);
+  });
+  const _readIntoPromise = (type, p) => (req, res) => {
+    const bs = [];
+    req.on('data', d => {
+      bs.push(d);
+    });
+    req.once('end', () => {
+      const d = Buffer.concat(bs);
+      p.accept(d);
+      res.end();
+    });
+    req.once('error', p.reject);
+  };
+  const gifPromise = makePromise();
+  app.put('/screenshot.gif', _readIntoPromise('gif', gifPromise));
+  const volumePromise = makePromise();
+  app.put('/volume.glb', _readIntoPromise('glb', volumePromise));
+  const aabbPromise = makePromise();
+  app.put('/aabb.json', _readIntoPromise('json', aabbPromise));
+  app.use(express.static(__dirname));
+  const server = http.createServer(app);
+  const connections = [];
+  server.on('connection', c => {
+    connections.push(c);
+  });
+  server.listen(port, () => {
+    open(`https://xrpackage.org/bake.html?srcWbn=http://localhost:${port}/a.wbn&dstGif=http://localhost:${port}/screenshot.gif&dstVolume=http://localhost:${port}/volume.glb&dstAabb=http://localhost:${port}/aabb.json`);
+  });
+
+  const [gifUint8Array, volumeUint8Array, aabbUint8Array] = await Promise.all([gifPromise, volumePromise, aabbPromise]);
+  server.close();
+  for (let i = 0; i < connections.length; i++) {
+    connections[i].destroy();
+  }
+
+  const bundleBuffer = fs.readFileSync(output);
+  const bundle = new wbn.Bundle(bundleBuffer);
+
+  const res = bundle.getResponse('https://xrpackage.org/manifest.json');
+  const s = res.body.toString('utf8');
+  const manifestJson = JSON.parse(s);
+
+  const builder = _cloneBundle(bundle, {
+    except: ['/manifest.json'],
+  });
+
+  if (gifUint8Array.length > 0) {
+    let gifIcon = manifestJson.icons && manifestJson.icons.find(icon => icon.type === 'image/gif');
+    if (!gifIcon) {
+      builder.addExchange(primaryUrl + '/xrpackage_icon.gif', 200, {
+        'Content-Type': 'image/gif',
+      }, gifUint8Array);
+
+      gifIcon = {
+        src: 'xrpackage_icon.gif',
+        'type': 'image/gif',
+      };
+      if (!Array.isArray(manifestJson.icons)) {
+        manifestJson.icons = [];
+      }
+      manifestJson.icons.push(gifIcon);
+    }
+  }
+  if (volumeUint8Array.length > 0) {
+    let volumeIcon = manifestJson.icons && manifestJson.icons.find(icon => icon.type === 'model/gltf-binary+preview');
+    if (!volumeIcon) {
+      builder.addExchange(primaryUrl + '/xrpackage_volume.glb', 200, {
+        'Content-Type': 'model/gltf-binary+preview',
+      }, volumeUint8Array);
+
+      volumeIcon = {
+        src: 'xrpackage_volume.glb',
+        'type': 'model/gltf-binary+preview',
+      };
+      if (!Array.isArray(manifestJson.icons)) {
+        manifestJson.icons = [];
+      }
+      manifestJson.icons.push(volumeIcon);
+    }
+  }
+  if (aabbUint8Array.length > 0) {
+    const aabb = JSON.parse(aabbUint8Array.toString('utf8'));
+    let xrDetails = manifestJson.xr_details;
+    if (!xrDetails) {
+      xrDetails = manifestJson.xr_details = {};
+    }
+    xrDetails.aabb = aabb;
+  }
+
+  builder.addExchange(primaryUrl + '/manifest.json', 200, {
+    'Content-Type': 'application/json',
+  }, JSON.stringify(manifestJson, null, 2));
+
+  const buffer = builder.createBundle();
+  fs.writeFileSync(output, buffer);
+};
 
 let handled = false;
 yargs
@@ -1209,6 +1315,20 @@ yargs
     }
 
     await _modelApp(argv.input);
+  })
+  .command('bake [input]', 'bake screenshot/volume/model of the package at [input]', yargs => {
+    yargs
+      .positional('input', {
+        describe: 'built package to bake (a.wbn)',
+      });
+  }, async argv => {
+    handled = true;
+
+    if (typeof argv.input !== 'string') {
+      argv.input = 'a.wbn';
+    }
+
+    await _bakeApp(argv.input);
   })
   .command('view [input]', 'view contents of input .wbn file', yargs => {
     yargs
