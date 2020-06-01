@@ -385,7 +385,6 @@ const _modelApp = async output => {
   const manifestJson = JSON.parse(s);
   const {start_url: startUrl, xr_type: xrType} = manifestJson;
 
-  const primaryUrl = 'https://xrpackage.org';
   const builder = _cloneBundle(bundle, {
     except: ['/manifest.json'],
   });
