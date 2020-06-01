@@ -281,7 +281,7 @@ const _screenshotApp = async output => {
 
       gifIcon = {
         src: 'xrpackage_icon.gif',
-        'type': 'image/gif',
+        type: 'image/gif',
       };
       if (!Array.isArray(manifestJson.icons)) {
         manifestJson.icons = [];
@@ -360,7 +360,7 @@ const _volumeApp = async output => {
 
       volumeIcon = {
         src: 'xrpackage_volume.glb',
-        'type': 'model/gltf-binary+preview',
+        type: 'model/gltf-binary+preview',
       };
       if (!Array.isArray(manifestJson.icons)) {
         manifestJson.icons = [];
@@ -422,7 +422,7 @@ const _modelApp = async output => {
 
     modelIcon = {
       src: modelPath,
-      'type': 'model/gltf-binary',
+      type: 'model/gltf-binary',
     };
     if (!Array.isArray(manifestJson.icons)) {
       manifestJson.icons = [];
@@ -502,7 +502,7 @@ const _bakeApp = async output => {
 
       gifIcon = {
         src: 'xrpackage_icon.gif',
-        'type': 'image/gif',
+        type: 'image/gif',
       };
       if (!Array.isArray(manifestJson.icons)) {
         manifestJson.icons = [];
@@ -519,7 +519,7 @@ const _bakeApp = async output => {
 
       volumeIcon = {
         src: 'xrpackage_volume.glb',
-        'type': 'model/gltf-binary+preview',
+        type: 'model/gltf-binary+preview',
       };
       if (!Array.isArray(manifestJson.icons)) {
         manifestJson.icons = [];
@@ -561,7 +561,7 @@ const _bakeApp = async output => {
 
     modelIcon = {
       src: modelPath,
-      'type': 'model/gltf-binary',
+      type: 'model/gltf-binary',
     };
     if (!Array.isArray(manifestJson.icons)) {
       manifestJson.icons = [];
