@@ -324,6 +324,8 @@ const _volumeApp = async output => {
   };
   const volumePromise = makePromise();
   app.put('/volume.glb', _readIntoPromise('glb', volumePromise));
+  const aabbPromise = makePromise();
+  app.put('/aabb.json', _readIntoPromise('json', aabbPromise));
   app.use(express.static(__dirname));
   const server = http.createServer(app);
   const connections = [];
@@ -331,10 +333,10 @@ const _volumeApp = async output => {
     connections.push(c);
   });
   server.listen(port, () => {
-    open(`https://xrpackage.org/volume.html?srcWbn=http://localhost:${port}/a.wbn&dstVolume=http://localhost:${port}/volume.glb`);
+    open(`https://xrpackage.org/volume.html?srcWbn=http://localhost:${port}/a.wbn&dstVolume=http://localhost:${port}/volume.glb&dstAabb=http://localhost:${port}/aabb.json`);
   });
 
-  const [volumeUint8Array] = await Promise.all([volumePromise]);
+  const [volumeUint8Array, aabbUint8Array] = await Promise.all([volumePromise, aabbPromise]);
   server.close();
   for (let i = 0; i < connections.length; i++) {
     connections[i].destroy();
@@ -367,6 +369,14 @@ const _volumeApp = async output => {
       }
       manifestJson.icons.push(volumeIcon);
     }
+  }
+  if (aabbUint8Array.length > 0) {
+    const aabb = JSON.parse(aabbUint8Array.toString('utf8'));
+    let xrDetails = manifestJson.xr_details;
+    if (!xrDetails) {
+      xrDetails = manifestJson.xr_details = {};
+    }
+    xrDetails.aabb = aabb;
   }
 
   builder.addExchange(primaryUrl + '/manifest.json', 200, {
