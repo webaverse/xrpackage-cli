@@ -309,8 +309,6 @@ const _volumeApp = async output => {
     fs.createReadStream(output).pipe(res);
   });
   const _readIntoPromise = (type, p) => (req, res) => {
-    // console.log(`got ${type} request`);
-
     const bs = [];
     req.on('data', d => {
       bs.push(d);
