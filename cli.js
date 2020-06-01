@@ -41,6 +41,8 @@ const getContract = Promise.all([
   return new web3.eth.Contract(abi, address);
 });
 
+const primaryUrl = 'https://xrpackage.org';
+
 /* loadPromise.then(c => {
   const m = c.methods.mint([1, 1, 1], '0x0', 'hash', 'lol');
   console.log('got c', Object.keys(c), Object.keys(c.methods.mint), Object.keys(m), m.encodeABI());
@@ -266,7 +268,6 @@ const _screenshotApp = async output => {
   const manifestJson = JSON.parse(s);
   const {start_url: startUrl} = manifestJson;
 
-  const primaryUrl = 'https://xrpackage.org';
   const builder = _cloneBundle(bundle, {
     except: ['/manifest.json'],
   });
@@ -347,7 +348,6 @@ const _volumeApp = async output => {
   const manifestJson = JSON.parse(s);
   const {start_url: startUrl} = manifestJson;
 
-  const primaryUrl = 'https://xrpackage.org';
   const builder = _cloneBundle(bundle, {
     except: ['/manifest.json'],
   });
@@ -1143,7 +1143,6 @@ yargs
         }
       }
 
-      const primaryUrl = `https://xrpackage.org`;
       const builder = new wbn.BundleBuilder(primaryUrl + '/' + startUrl);
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
