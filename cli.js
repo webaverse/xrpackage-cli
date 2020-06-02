@@ -967,7 +967,7 @@ yargs
       open(url);
     });
   })
-  .command('preview [id]', 'preview a package in browser', yargs => {
+  .command('inspect [id]', 'inspect a package in browser', yargs => {
     yargs
       .option('path', {
         alias: 'p',
@@ -989,10 +989,10 @@ yargs
       let url;
       let servePath;
       if (o.path) {
-        url = `http://localhost:${port}/preview.html`;
+        url = `http://localhost:${port}/inspect.html`;
         servePath = o.path;
       } else {
-        url = `https://xrpackage.org/preview.html`;
+        url = `https://xrpackage.org/inspect.html`;
         servePath = null;
       }
       if (o.id) {
