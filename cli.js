@@ -545,7 +545,7 @@ const _bakeApp = async output => {
       {
         /* const res = bundle.getResponse(primaryUrl + '/' + startUrl);
         return res.body; */
-        modelPath = startUrl;
+        modelPath = manifestJson.start_url;
         break;
       }
       default: {
