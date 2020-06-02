@@ -539,7 +539,7 @@ const _bakeApp = async output => {
   let modelIcon = manifestJson.icons && manifestJson.icons.find(icon => icon.type === 'model/gltf-binary');
   if (!modelIcon) {
     let modelPath;
-    switch (xrType) {
+    switch (manifestJson.xr_type) {
       case 'gltf@0.0.1':
       case 'vrm@0.0.1':
       {
