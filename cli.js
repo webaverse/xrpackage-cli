@@ -689,21 +689,33 @@ yargs
     const dataArrayBuffer = fs.readFileSync(argv.input);
     const bundle = new wbn.Bundle(dataArrayBuffer);
     if (bundle.urls.includes('https://xrpackage.org/manifest.json')) {
-      // const screenshotBlob = fs.readFileSync(argv.input + '.gif');
-      // const modelBlob = fs.readFileSync(argv.input + '.glb');
-
       const response = bundle.getResponse('https://xrpackage.org/manifest.json');
-      const s = response.body.toString('utf-8');
+      const s = response.body.toString('utf8');
       const j = JSON.parse(s);
-      const {name, description} = j;
+      const {name, description, icons = []} = j;
+
+      const iconObjects = [];
+      for (let i = 0; i < icons.length; i++) {
+        const icon = icons[i];
+        const {src, type} = icon;
+        console.warn(`uploading icon "${type}" (${i+1}/${icons.length})...`);
+        const response = bundle.getResponse(`https://xrpackage.org/${src}`);
+        const hash = await fetch(`${apiHost}/`, {
+          method: 'PUT',
+          body: response.body,
+        })
+          .then(res => res.json())
+          .then(j => j.hash);
+        iconObjects.push({
+          hash,
+          type,
+        });
+      }
 
       const objectName = typeof name === 'string' ? name : path.basename(argv.input);
       const objectDescription = typeof description === 'string' ? description : `Package for ${path.basename(argv.input)}`;
 
-      console.log('Name:', objectName);
-      console.log('Description:', objectDescription);
-
-      console.log('uploading...');
+      console.warn('uploading data...');
       const dataHash = await fetch(`${apiHost}/`, {
         method: 'PUT',
         body: dataArrayBuffer,
@@ -711,7 +723,30 @@ yargs
         .then(res => res.json())
         .then(j => j.hash);
 
-      console.log(`${apiHost}/${dataHash}.wbn`);
+      console.warn('uploading metadata...');
+      const metadata = {
+        name,
+        description,
+        icons: iconObjects,
+        dataHash,
+      };
+      const metadataHash = await fetch(`${apiHost}/`, {
+        method: 'PUT',
+        body: JSON.stringify(metadata),
+      })
+        .then(res => res.json())
+        .then(j => j.hash);
+
+      console.log('Name:', objectName);
+      console.log('Description:', objectDescription);
+      if (iconObjects.length > 0) {
+        console.log('Icons:');
+        for (const o of iconObjects) {
+          console.log(`  ${apiHost}/${o.hash} ${o.type}`);
+        }
+      }
+      console.log('Data:', `${apiHost}/${dataHash}.wbn`);
+      console.log('Metadata:', `${apiHost}/${metadataHash}.json`);
     } else {
       console.warn('no manifest.json in package');
     }
@@ -738,7 +773,7 @@ yargs
         const modelBlob = fs.readFileSync(argv.input + '.glb');
 
         const response = bundle.getResponse('https://xrpackage.org/manifest.json');
-        const s = response.body.toString('utf-8');
+        const s = response.body.toString('utf8');
         const j = JSON.parse(s);
         const {name, description} = j;
 
@@ -827,7 +862,7 @@ yargs
           // status: response.status,
           // headers: response.headers,
           response,
-          // body: response.body.toString('utf-8')
+          // body: response.body.toString('utf8')
         });
       } */
     } else {
