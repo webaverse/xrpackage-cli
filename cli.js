@@ -218,6 +218,66 @@ const _cloneBundle = (bundle, options = {}) => {
   }
   return builder;
 };
+const _uploadPackage = async input => {
+  const dataArrayBuffer = fs.readFileSync(input);
+  const bundle = new wbn.Bundle(dataArrayBuffer);
+  if (bundle.urls.includes('https://xrpackage.org/manifest.json')) {
+    const response = bundle.getResponse('https://xrpackage.org/manifest.json');
+    const s = response.body.toString('utf8');
+    const j = JSON.parse(s);
+    const {name, description, icons = []} = j;
+
+    const iconObjects = [];
+    for (let i = 0; i < icons.length; i++) {
+      const icon = icons[i];
+      const {src, type} = icon;
+      console.warn(`uploading icon "${type}" (${i+1}/${icons.length})...`);
+      const response = bundle.getResponse(`https://xrpackage.org/${src}`);
+      const hash = await fetch(`${apiHost}/`, {
+        method: 'PUT',
+        body: response.body,
+      })
+        .then(res => res.json())
+        .then(j => j.hash);
+      iconObjects.push({
+        hash,
+        type,
+      });
+    }
+
+    const objectName = typeof name === 'string' ? name : path.basename(argv.input);
+    const objectDescription = typeof description === 'string' ? description : `Package for ${path.basename(argv.input)}`;
+
+    console.warn('uploading data...');
+    const dataHash = await fetch(`${apiHost}/`, {
+      method: 'PUT',
+      body: dataArrayBuffer,
+    })
+      .then(res => res.json())
+      .then(j => j.hash);
+
+    console.warn('uploading metadata...');
+    const metadata = {
+      name: objectName,
+      description: objectDescription,
+      icons: iconObjects,
+      dataHash,
+    };
+    const metadataHash = await fetch(`${apiHost}/`, {
+      method: 'PUT',
+      body: JSON.stringify(metadata),
+    })
+      .then(res => res.json())
+      .then(j => j.hash);
+
+    return {
+      metadata,
+      metadataHash,
+    };
+  } else {
+    return null;
+  }
+};
 const _screenshotApp = async output => {
   const app = express();
   app.use((req, res, next) => {
@@ -687,76 +747,58 @@ yargs
       argv.input = 'a.wbn';
     }
 
-    const dataArrayBuffer = fs.readFileSync(argv.input);
-    const bundle = new wbn.Bundle(dataArrayBuffer);
-    if (bundle.urls.includes('https://xrpackage.org/manifest.json')) {
-      const response = bundle.getResponse('https://xrpackage.org/manifest.json');
-      const s = response.body.toString('utf8');
-      const j = JSON.parse(s);
-      const {name, description, icons = []} = j;
-
-      const iconObjects = [];
-      for (let i = 0; i < icons.length; i++) {
-        const icon = icons[i];
-        const {src, type} = icon;
-        console.warn(`uploading icon "${type}" (${i+1}/${icons.length})...`);
-        const response = bundle.getResponse(`https://xrpackage.org/${src}`);
-        const hash = await fetch(`${apiHost}/`, {
-          method: 'PUT',
-          body: response.body,
-        })
-          .then(res => res.json())
-          .then(j => j.hash);
-        iconObjects.push({
-          hash,
-          type,
-        });
-      }
-
-      const objectName = typeof name === 'string' ? name : path.basename(argv.input);
-      const objectDescription = typeof description === 'string' ? description : `Package for ${path.basename(argv.input)}`;
-
-      console.warn('uploading data...');
-      const dataHash = await fetch(`${apiHost}/`, {
-        method: 'PUT',
-        body: dataArrayBuffer,
-      })
-        .then(res => res.json())
-        .then(j => j.hash);
-
-      console.warn('uploading metadata...');
-      const metadata = {
-        name,
-        description,
-        icons: iconObjects,
-        dataHash,
-      };
-      const metadataHash = await fetch(`${apiHost}/`, {
-        method: 'PUT',
-        body: JSON.stringify(metadata),
-      })
-        .then(res => res.json())
-        .then(j => j.hash);
-
-      console.log('Name:', objectName);
-      console.log('Description:', objectDescription);
-      if (iconObjects.length > 0) {
+    const o = await _uploadPackage(argv.input);
+    if (o) {
+      const {metadata, metadataHash} = o;
+      console.log('Name:', metadata.name);
+      console.log('Description:', metadata.description);
+      if (metadata.icons.length > 0) {
         console.log('Icons:');
-        for (const o of iconObjects) {
+        for (const o of metadata.icons) {
           console.log(`  ${apiHost}/${o.hash} ${o.type}`);
         }
       }
-      console.log('Data:', `${apiHost}/${dataHash}.wbn`);
+      console.log('Data:', `${apiHost}/${metadata.dataHash}.wbn`);
+      console.log('Metadata:', `${apiHost}/${metadataHash}.json`);
+    } else {
+      console.warn('no manifest.json in package');
+    }
+  })
+  .command('publish [input]', 'publish a package to ipfs', yargs => {
+    yargs
+      .positional('input', {
+        describe: '.wbn package to publish',
+        // default: 5000
+      })
+  }, async argv => {
+    handled = true;
+
+    if (typeof argv.input !== 'string') {
+      argv.input = 'a.wbn';
+    }
+
+    const o = await _uploadPackage(argv.input);
+    if (o) {
+      const {metadata, metadataHash} = o;
+      console.log('Name:', metadata.name);
+      console.log('Description:', metadata.description);
+      if (metadata.icons.length > 0) {
+        console.log('Icons:');
+        for (const o of metadata.icons) {
+          console.log(`  ${apiHost}/${o.hash} ${o.type}`);
+        }
+      }
+      console.log('Data:', `${apiHost}/${metadata.dataHash}.wbn`);
       console.log('Metadata:', `${apiHost}/${metadataHash}.json`);
 
-      const res = await fetch(packagesEndpoint + '/' + hash, {
+      const u = packagesEndpoint + '/' + metadataHash;
+      const res = await fetch(u, {
         method: 'PUT',
-        body: JSON.stringify(p),
+        body: JSON.stringify(metadata),
       });
       if (res.ok) {
-        packages.innerHTML += '\n' + _makePackageHtml(p);
-        const ps = Array.from(packages.querySelectorAll('.package'));
-        Array.from(packages.querySelectorAll('.package')).forEach(p => _bindPackage(p));
+        await res.json();
+        console.log(u);
       } else {
         console.warn('invalid status code: ' + res.status);
       }
@@ -764,10 +806,10 @@ yargs
       console.warn('no manifest.json in package');
     }
   })
-  .command('publish [input]', 'publish a package', yargs => {
+  .command('mint [input]', 'mint a package on ethereum', yargs => {
     yargs
       .positional('input', {
-        describe: '.wbn package to publish',
+        describe: '.wbn package to mint',
         // default: 5000
       })
   }, async argv => {
