@@ -865,19 +865,6 @@ yargs
       } else {
         console.warn('no manifest.json in package');
       }
-
-
-      /* for (const url of bundle.urls) {
-        const response = ;
-        console.log(url);
-        files.push({
-          url,
-          // status: response.status,
-          // headers: response.headers,
-          response,
-          // body: response.body.toString('utf8')
-        });
-      } */
     } else {
       _printNotLoggedIn();
     }
