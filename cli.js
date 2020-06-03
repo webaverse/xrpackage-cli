@@ -26,6 +26,7 @@ const express = require('express');
 const open = require('open');
 
 const apiHost = `https://ipfs.exokit.org/ipfs`;
+const packagesEndpoint = 'https://packages.exokit.org'
 const tokenHost = `https://tokens.webaverse.com`;
 const network = 'rinkeby';
 const infuraApiKey = '4fb939301ec543a0969f3019d74f80c2';
@@ -747,6 +748,18 @@ yargs
       }
       console.log('Data:', `${apiHost}/${dataHash}.wbn`);
       console.log('Metadata:', `${apiHost}/${metadataHash}.json`);
+
+      const res = await fetch(packagesEndpoint + '/' + hash, {
+        method: 'PUT',
+        body: JSON.stringify(p),
+      });
+      if (res.ok) {
+        packages.innerHTML += '\n' + _makePackageHtml(p);
+        const ps = Array.from(packages.querySelectorAll('.package'));
+        Array.from(packages.querySelectorAll('.package')).forEach(p => _bindPackage(p));
+      } else {
+        console.warn('invalid status code: ' + res.status);
+      }
     } else {
       console.warn('no manifest.json in package');
     }
