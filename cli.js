@@ -333,22 +333,21 @@ const _screenshotApp = async output => {
     except: ['/manifest.json'],
   });
 
+  manifestJson.icons = Array.isArray(manifestJson.icons) ? manifestJson.icons : [];
   if (gifUint8Array.length > 0) {
-    let gifIcon = manifestJson.icons && manifestJson.icons.find(icon => icon.type === 'image/gif');
+    builder.addExchange(primaryUrl + '/xrpackage_icon.gif', 200, {
+      'Content-Type': 'image/gif',
+    }, gifUint8Array);
+    
+    let gifIcon = manifestJson.icons.find(icon => icon.type === 'image/gif');
     if (!gifIcon) {
-      builder.addExchange(primaryUrl + '/xrpackage_icon.gif', 200, {
-        'Content-Type': 'image/gif',
-      }, gifUint8Array);
-
       gifIcon = {
-        src: 'xrpackage_icon.gif',
+        src: '',
         type: 'image/gif',
       };
-      if (!Array.isArray(manifestJson.icons)) {
-        manifestJson.icons = [];
-      }
       manifestJson.icons.push(gifIcon);
     }
+    gifIcon.src = 'xrpackage_icon.gif';
   }
 
   builder.addExchange(primaryUrl + '/manifest.json', 200, {
@@ -412,22 +411,36 @@ const _volumeApp = async output => {
     except: ['/manifest.json'],
   });
 
+  manifestJson.icons = Array.isArray(manifestJson.icons) ? manifestJson.icons : [];
+  if (gifUint8Array.length > 0) {
+    builder.addExchange(primaryUrl + '/xrpackage_icon.gif', 200, {
+      'Content-Type': 'image/gif',
+    }, gifUint8Array);
+    
+    let gifIcon = manifestJson.icons.find(icon => icon.type === 'image/gif');
+    if (!gifIcon) {
+      gifIcon = {
+        src: '',
+        type: 'image/gif',
+      };
+      manifestJson.icons.push(gifIcon);
+    }
+    gifIcon.src = 'xrpackage_icon.gif';
+  }
   if (volumeUint8Array.length > 0) {
-    let volumeIcon = manifestJson.icons && manifestJson.icons.find(icon => icon.type === 'model/gltf-binary+preview');
+    builder.addExchange(primaryUrl + '/xrpackage_volume.glb', 200, {
+      'Content-Type': 'model/gltf-binary+preview',
+    }, volumeUint8Array);
+    
+    let volumeIcon = manifestJson.icons.find(icon => icon.type === 'model/gltf-binary+preview');
     if (!volumeIcon) {
-      builder.addExchange(primaryUrl + '/xrpackage_volume.glb', 200, {
-        'Content-Type': 'model/gltf-binary+preview',
-      }, volumeUint8Array);
-
       volumeIcon = {
-        src: 'xrpackage_volume.glb',
+        src: '',
         type: 'model/gltf-binary+preview',
       };
-      if (!Array.isArray(manifestJson.icons)) {
-        manifestJson.icons = [];
-      }
       manifestJson.icons.push(volumeIcon);
     }
+    volumeIcon.src = 'xrpackage_volume.glb';
   }
   if (aabbUint8Array.length > 0) {
     const aabb = JSON.parse(aabbUint8Array.toString('utf8'));
@@ -554,39 +567,36 @@ const _bakeApp = async output => {
     except: ['/manifest.json'],
   });
 
+  manifestJson.icons = Array.isArray(manifestJson.icons) ? manifestJson.icons : [];
   if (gifUint8Array.length > 0) {
-    let gifIcon = manifestJson.icons && manifestJson.icons.find(icon => icon.type === 'image/gif');
+    builder.addExchange(primaryUrl + '/xrpackage_icon.gif', 200, {
+      'Content-Type': 'image/gif',
+    }, gifUint8Array);
+    
+    let gifIcon = manifestJson.icons.find(icon => icon.type === 'image/gif');
     if (!gifIcon) {
-      builder.addExchange(primaryUrl + '/xrpackage_icon.gif', 200, {
-        'Content-Type': 'image/gif',
-      }, gifUint8Array);
-
       gifIcon = {
-        src: 'xrpackage_icon.gif',
+        src: '',
         type: 'image/gif',
       };
-      if (!Array.isArray(manifestJson.icons)) {
-        manifestJson.icons = [];
-      }
       manifestJson.icons.push(gifIcon);
     }
+    gifIcon.src = 'xrpackage_icon.gif';
   }
   if (volumeUint8Array.length > 0) {
-    let volumeIcon = manifestJson.icons && manifestJson.icons.find(icon => icon.type === 'model/gltf-binary+preview');
+    builder.addExchange(primaryUrl + '/xrpackage_volume.glb', 200, {
+      'Content-Type': 'model/gltf-binary+preview',
+    }, volumeUint8Array);
+    
+    let volumeIcon = manifestJson.icons.find(icon => icon.type === 'model/gltf-binary+preview');
     if (!volumeIcon) {
-      builder.addExchange(primaryUrl + '/xrpackage_volume.glb', 200, {
-        'Content-Type': 'model/gltf-binary+preview',
-      }, volumeUint8Array);
-
       volumeIcon = {
-        src: 'xrpackage_volume.glb',
+        src: '',
         type: 'model/gltf-binary+preview',
       };
-      if (!Array.isArray(manifestJson.icons)) {
-        manifestJson.icons = [];
-      }
       manifestJson.icons.push(volumeIcon);
     }
+    volumeIcon.src = 'xrpackage_volume.glb';
   }
   if (aabbUint8Array.length > 0) {
     const aabb = JSON.parse(aabbUint8Array.toString('utf8'));
@@ -597,7 +607,7 @@ const _bakeApp = async output => {
     xrDetails.aabb = aabb;
   }
 
-  let modelIcon = manifestJson.icons && manifestJson.icons.find(icon => icon.type === 'model/gltf-binary');
+  let modelIcon = manifestJson.icons.find(icon => icon.type === 'model/gltf-binary');
   if (!modelIcon) {
     let modelPath;
     switch (manifestJson.xr_type) {
@@ -624,9 +634,6 @@ const _bakeApp = async output => {
       src: modelPath,
       type: 'model/gltf-binary',
     };
-    if (!Array.isArray(manifestJson.icons)) {
-      manifestJson.icons = [];
-    }
     manifestJson.icons.push(modelIcon);
   }
 
