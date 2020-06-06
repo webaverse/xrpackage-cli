@@ -777,8 +777,12 @@ yargs
       argv.input = 'a.wbn';
     }
 
-    const o = await _uploadPackage(argv.input);
-    if (o) {
+    const dataArrayBuffer = fs.readFileSync(argv.input);
+    const bundle = new wbn.Bundle(dataArrayBuffer);
+    const j = _getManifestJson(bundle);
+    if (j) {
+      const {name} = j;
+      const o = await _uploadPackage(dataArrayBuffer);
       const {metadata, metadataHash} = o;
       console.log('Name:', metadata.name);
       console.log('Description:', metadata.description);
@@ -791,7 +795,7 @@ yargs
       console.log('Data:', `${apiHost}/${metadata.dataHash}.wbn`);
       console.log('Metadata:', `${apiHost}/${metadataHash}.json`);
 
-      const u = packagesEndpoint + '/' + metadataHash;
+      const u = packagesEndpoint + '/' + name;
       const res = await fetch(u, {
         method: 'PUT',
         body: JSON.stringify(metadata),
@@ -1201,7 +1205,7 @@ yargs
       argv.output = 'a.wbn';
     }
 
-    let fileInput, startUrl, xrType, xrDetails, mimeType, description, directory;
+    let fileInput, startUrl, xrType, xrDetails, mimeType, name, description, directory;
     const xrTypeToMimeType = {
       'gltf@0.0.1': 'model/gltf+json',
       'vrm@0.0.1': 'application/octet-stream',
@@ -1215,6 +1219,7 @@ yargs
         xrDetails = {};
         startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
+        name = path.basename(input);
         description = 'GLTF JSON model';
         directory = null;
       } else if (/\.glb$/.test(input)) {
@@ -1223,6 +1228,7 @@ yargs
         xrDetails = {};
         startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
+        name = path.basename(input);
         description = 'GLTF binary model';
         directory = null;
       } else if (/\.vrm$/.test(input)) {
@@ -1231,6 +1237,7 @@ yargs
         xrDetails = {};
         startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
+        name = path.basename(input);
         description = 'VRM model';
         directory = null;
       } else if (/\.vox$/.test(input)) {
@@ -1239,6 +1246,7 @@ yargs
         xrDetails = {};
         startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
+        name = path.basename(input);
         description = 'VOX model';
         directory = null;
       } else if (/\.html$/.test(input)) {
@@ -1247,6 +1255,7 @@ yargs
         xrDetails = {};
         startUrl = path.basename(fileInput);
         mimeType = xrTypeToMimeType[xrType];
+        name = path.basename(input);
         description = 'WebXR app';
         directory = null;
       } else if (/\.json$/.test(input)) {
@@ -1280,6 +1289,7 @@ yargs
               startUrl = j.start_url.replace(/(?:\?|\#).*$/, '');
               mimeType = xrTypeToMimeType[xrType] || 'application/octet-stream';
               fileInput = path.join(path.dirname(input), _removeUrlTail(startUrl));
+              name = typeof j.name === 'string' ? j.name : path.basename(path.dirname(input));
               description = 'Directory package';
               directory = path.dirname(input);
             } else if (!hasXrType) {
@@ -1317,7 +1327,7 @@ yargs
           url: '/manifest.json',
           type: 'application/json',
           data: JSON.stringify({
-            name: argv.input,
+            name,
             description,
             xr_type: xrType,
             start_url: startUrl,
