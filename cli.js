@@ -218,64 +218,96 @@ const _cloneBundle = (bundle, options = {}) => {
   }
   return builder;
 };
-const _uploadPackage = async input => {
-  const dataArrayBuffer = fs.readFileSync(input);
-  const bundle = new wbn.Bundle(dataArrayBuffer);
+const _getManifestJson = bundle => {
   if (bundle.urls.includes('https://xrpackage.org/manifest.json')) {
     const response = bundle.getResponse('https://xrpackage.org/manifest.json');
     const s = response.body.toString('utf8');
     const j = JSON.parse(s);
-    const {name, description, icons = []} = j;
-
-    const iconObjects = [];
-    for (let i = 0; i < icons.length; i++) {
-      const icon = icons[i];
-      const {src, type} = icon;
-      console.warn(`uploading icon "${type}" (${i+1}/${icons.length})...`);
-      const response = bundle.getResponse(`https://xrpackage.org/${src}`);
-      const hash = await fetch(`${apiHost}/`, {
-        method: 'PUT',
-        body: response.body,
-      })
-        .then(res => res.json())
-        .then(j => j.hash);
-      iconObjects.push({
-        hash,
-        type,
-      });
-    }
-
-    const objectName = typeof name === 'string' ? name : path.basename(argv.input);
-    const objectDescription = typeof description === 'string' ? description : `Package for ${path.basename(argv.input)}`;
-
-    console.warn('uploading data...');
-    const dataHash = await fetch(`${apiHost}/`, {
-      method: 'PUT',
-      body: dataArrayBuffer,
-    })
-      .then(res => res.json())
-      .then(j => j.hash);
-
-    console.warn('uploading metadata...');
-    const metadata = {
-      name: objectName,
-      description: objectDescription,
-      icons: iconObjects,
-      dataHash,
-    };
-    const metadataHash = await fetch(`${apiHost}/`, {
-      method: 'PUT',
-      body: JSON.stringify(metadata),
-    })
-      .then(res => res.json())
-      .then(j => j.hash);
-
-    return {
-      metadata,
-      metadataHash,
-    };
+    return j;
   } else {
     return null;
+  }
+};
+const _isNamed = bundle => {
+  const j = _getManifestJson(bundle);
+  return !!j && typeof j.name === 'string';
+};
+const _isBaked = bundle => {
+  const j = _getManifestJson(bundle);
+  if (j) {
+    const {icons} = j;
+    if (Array.isArray(icons)) {
+      return ['image/gif', 'model/gltf-binary', 'model/gltf-binary+preview'].every(type => icons.some(i => i && i.type === type));
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+};
+const _uploadPackage = async dataArrayBuffer => {
+  const bundle = new wbn.Bundle(dataArrayBuffer);
+  const j = _getManifestJson(bundle);
+  if (j) {
+    if (_isNamed(bundle)) {
+      if (_isBaked(bundle)) {
+        const {name, description, icons = []} = j;
+
+        const iconObjects = [];
+        for (let i = 0; i < icons.length; i++) {
+          const icon = icons[i];
+          const {src, type} = icon;
+          console.warn(`uploading icon "${type}" (${i+1}/${icons.length})...`);
+          const response = bundle.getResponse(`https://xrpackage.org/${src}`);
+          const hash = await fetch(`${apiHost}/`, {
+            method: 'PUT',
+            body: response.body,
+          })
+            .then(res => res.json())
+            .then(j => j.hash);
+          iconObjects.push({
+            hash,
+            type,
+          });
+        }
+
+        const objectName = typeof name === 'string' ? name : path.basename(argv.input);
+        const objectDescription = typeof description === 'string' ? description : `Package for ${path.basename(argv.input)}`;
+
+        console.warn('uploading data...');
+        const dataHash = await fetch(`${apiHost}/`, {
+          method: 'PUT',
+          body: dataArrayBuffer,
+        })
+          .then(res => res.json())
+          .then(j => j.hash);
+
+        console.warn('uploading metadata...');
+        const metadata = {
+          name: objectName,
+          description: objectDescription,
+          icons: iconObjects,
+          dataHash,
+        };
+        const metadataHash = await fetch(`${apiHost}/`, {
+          method: 'PUT',
+          body: JSON.stringify(metadata),
+        })
+          .then(res => res.json())
+          .then(j => j.hash);
+
+        return {
+          metadata,
+          metadataHash,
+        };
+      } else {
+        throw 'package is not baked; try xrpk bake';
+      }
+    } else {
+      throw 'package is not named; add a "name" string to manifest.json';
+    }
+  } else {
+    throw 'no manifest.json in package';
   }
 };
 const _screenshotApp = async output => {
@@ -754,22 +786,19 @@ yargs
       argv.input = 'a.wbn';
     }
 
-    const o = await _uploadPackage(argv.input);
-    if (o) {
-      const {metadata, metadataHash} = o;
-      console.log('Name:', metadata.name);
-      console.log('Description:', metadata.description);
-      if (metadata.icons.length > 0) {
-        console.log('Icons:');
-        for (const o of metadata.icons) {
-          console.log(`  ${apiHost}/${o.hash} ${o.type}`);
-        }
+    const dataArrayBuffer = fs.readFileSync(input);
+    const o = await _uploadPackage(dataArrayBuffer);
+    const {metadata, metadataHash} = o;
+    console.log('Name:', metadata.name);
+    console.log('Description:', metadata.description);
+    if (metadata.icons.length > 0) {
+      console.log('Icons:');
+      for (const o of metadata.icons) {
+        console.log(`  ${apiHost}/${o.hash} ${o.type}`);
       }
-      console.log('Data:', `${apiHost}/${metadata.dataHash}.wbn`);
-      console.log('Metadata:', `${apiHost}/${metadataHash}.json`);
-    } else {
-      console.warn('no manifest.json in package');
     }
+    console.log('Data:', `${apiHost}/${metadata.dataHash}.wbn`);
+    console.log('Metadata:', `${apiHost}/${metadataHash}.json`);
   })
   .command('publish [input]', 'publish a package to ipfs', yargs => {
     yargs
