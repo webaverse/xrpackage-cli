@@ -312,7 +312,7 @@ const _screenshotApp = async output => {
     connections.push(c);
   });
   server.listen(port, () => {
-    open(`https://xrpackage.org/screenshot.html?srcWbn=http://localhost:${port}/a.wbn&dstGif=http://localhost:${port}/screenshot.gif`);
+    open(`https://xrpackage.org/screenshot.html?srcWbn%3Dhttp://localhost:${port}/a.wbn%26dstGif%3Dhttp://localhost:${port}/screenshot.gif`);
   });
 
   const [gifUint8Array] = await Promise.all([gifPromise]);
@@ -392,7 +392,7 @@ const _volumeApp = async output => {
     connections.push(c);
   });
   server.listen(port, () => {
-    open(`https://xrpackage.org/volume.html?srcWbn=http://localhost:${port}/a.wbn&dstVolume=http://localhost:${port}/volume.glb&dstAabb=http://localhost:${port}/aabb.json`);
+    open(`https://xrpackage.org/volume.html?srcWbn%3Dhttp://localhost:${port}/a.wbn%26dstVolume%3Dhttp://localhost:${port}/volume.glb%26dstAabb%3Dhttp://localhost:${port}/aabb.json`);
   });
 
   const [volumeUint8Array, aabbUint8Array] = await Promise.all([volumePromise, aabbPromise]);
@@ -534,7 +534,7 @@ const _bakeApp = async output => {
     connections.push(c);
   });
   server.listen(port, () => {
-    open(`https://xrpackage.org/bake.html?srcWbn=http://localhost:${port}/a.wbn&dstGif=http://localhost:${port}/screenshot.gif&dstVolume=http://localhost:${port}/volume.glb&dstAabb=http://localhost:${port}/aabb.json`);
+    open(`https://xrpackage.org/bake.html?srcWbn=http://localhost:${port}/a.wbn%26dstGif%3Dhttp://localhost:${port}/screenshot.gif%26dstVolume%3Dhttp://localhost:${port}/volume.glb%26dstAabb%3Dhttp://localhost:${port}/aabb.json`);
   });
 
   const [gifUint8Array, volumeUint8Array, aabbUint8Array] = await Promise.all([gifPromise, volumePromise, aabbPromise]);
