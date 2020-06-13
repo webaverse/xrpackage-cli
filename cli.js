@@ -76,6 +76,8 @@ function makePromise() {
   p.reject = reject;
   return p;
 }
+const packageNameRegex = /^[a-z0-9][a-z0-9-._~]*$/;
+const _isValidPackageName = name => packageNameRegex.test(name);
 const _removeUrlTail = u => u.replace(/(?:\?|\#).*$/, '');
 async function getKs() {
   const ksString = (() => {
@@ -230,7 +232,7 @@ const _getManifestJson = bundle => {
 };
 const _isNamed = bundle => {
   const j = _getManifestJson(bundle);
-  return !!j && typeof j.name === 'string';
+  return !!j && typeof j.name === 'string' && _isValidPackageName(j.name);
 };
 const _isBaked = bundle => {
   const j = _getManifestJson(bundle);
@@ -304,7 +306,7 @@ const _uploadPackage = async dataArrayBuffer => {
         throw 'package is not baked; try xrpk bake';
       }
     } else {
-      throw 'package is not named; add a "name" string to manifest.json';
+      throw `package does not have a valid "name" in manifest.json (${packageNameRegex.toString()})`;
     }
   } else {
     throw 'no manifest.json in package';
