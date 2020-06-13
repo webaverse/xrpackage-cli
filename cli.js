@@ -1027,7 +1027,7 @@ yargs
       _printNotLoggedIn();
     }
   })
-  .command('count', 'get count of published packages', yargs => {
+  .command('count', 'get count of minted packages', yargs => {
     yargs
       /* .positional('id', {
         describe: 'id of package to install',
