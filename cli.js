@@ -846,6 +846,31 @@ yargs
       console.warn('no manifest.json in package');
     }
   })
+  .command('unpublish [name]', 'unpublish a package from ipfs', yargs => {
+    yargs
+      .positional('name', {
+        describe: 'package name to unpublish',
+        // default: 5000
+      })
+  }, async argv => {
+    handled = true;
+
+    const {name} = argv;
+    if (name) {
+      const u = packagesEndpoint + '/' + name;
+      const res = await fetch(u, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        await res.json();
+        console.log(u);
+      } else {
+        console.warn('invalid status code: ' + res.status);
+      }
+    } else {
+      throw 'must provide a package name'
+    }
+  })
   .command('mint [input]', 'mint a package on ethereum', yargs => {
     yargs
       .positional('input', {
