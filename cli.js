@@ -840,7 +840,7 @@ yargs
       });
       if (res.ok) {
         await res.json();
-        console.log(u);
+        console.log(`https://xrpackage.org/inspect.html?p=${name}`);
       } else {
         console.warn('invalid status code: ' + res.status);
       }
