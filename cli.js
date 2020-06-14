@@ -1579,6 +1579,48 @@ yargs
       throw 'missing input file';
     }
   })
+  .command('icon [input]', 'print icons of a package', yargs => {
+    yargs
+      .positional('input', {
+        describe: 'input file to get icons for',
+        // default: 5000
+      });
+  }, async argv => {
+    handled = true;
+
+    if (typeof argv.input !== 'string') {
+      argv.input = 'a.wbn';
+    }
+
+    const dataArrayBuffer = fs.readFileSync(argv.input);
+    const bundle = new wbn.Bundle(dataArrayBuffer);
+    const j = _getManifestJson(bundle);
+    if (j) {
+      const {icons} = j;
+      if (icons) {
+        for (const icon of icons) {
+          if (icon) {
+            const {src, type} = icon;
+            const p = '/' + src;
+            const u = bundle.urls.find(u => new url.URL(u).pathname === p);
+            let desc;
+            if (u) {
+              const res = bundle.getResponse(u);
+              const {body} = res;
+              desc = `${body.length}`;
+            } else {
+              desc = '[missing]'
+            }
+            console.log(`${src} ${type} ${desc}`);
+          }
+        }
+      } else {
+        console.warn('package has no icons');
+      }
+    } else {
+      throw 'failed to load manifest.json';
+    }
+  })
   .command('headers [input] [path]', 'print headers for file inside .wbn to stdout', yargs => {
     yargs
       .positional('input', {
