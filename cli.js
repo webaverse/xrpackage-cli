@@ -458,21 +458,6 @@ const _volumeApp = async output => {
   });
 
   manifestJson.icons = Array.isArray(manifestJson.icons) ? manifestJson.icons : [];
-  if (gifUint8Array.length > 0) {
-    builder.addExchange(primaryUrl + '/xrpackage_icon.gif', 200, {
-      'Content-Type': 'image/gif',
-    }, gifUint8Array);
-    
-    let gifIcon = manifestJson.icons.find(icon => icon.type === 'image/gif');
-    if (!gifIcon) {
-      gifIcon = {
-        src: '',
-        type: 'image/gif',
-      };
-      manifestJson.icons.push(gifIcon);
-    }
-    gifIcon.src = 'xrpackage_icon.gif';
-  }
   if (volumeUint8Array.length > 0) {
     builder.addExchange(primaryUrl + '/xrpackage_volume.glb', 200, {
       'Content-Type': 'model/gltf-binary+preview',
