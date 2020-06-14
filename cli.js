@@ -338,6 +338,10 @@ const _screenshotApp = async output => {
     req.once('error', p.reject);
   };
   const gifPromise = makePromise();
+  gifPromise.then(d => {
+    console.warn(`got screenshot (${d.length} bytes)`);
+    return d;
+  });
   app.put('/screenshot.gif', _readIntoPromise('gif', gifPromise));
   app.use(express.static(__dirname));
   const server = http.createServer(app);
@@ -415,8 +419,16 @@ const _volumeApp = async output => {
     req.once('error', p.reject);
   };
   const volumePromise = makePromise();
+  volumePromise.then(d => {
+    console.warn(`got volume (${d.length} bytes)`);
+    return d;
+  });
   app.put('/volume.glb', _readIntoPromise('glb', volumePromise));
   const aabbPromise = makePromise();
+  aabbPromise.then(d => {
+    console.warn(`got aabb (${d.length} bytes)`);
+    return d;
+  });
   app.put('/aabb.json', _readIntoPromise('json', aabbPromise));
   app.use(express.static(__dirname));
   const server = http.createServer(app);
@@ -569,10 +581,22 @@ const _bakeApp = async output => {
     req.once('error', p.reject);
   };
   const gifPromise = makePromise();
+  gifPromise.then(d => {
+    console.warn(`got screenshot (${d.length} bytes)`);
+    return d;
+  });
   app.put('/screenshot.gif', _readIntoPromise('gif', gifPromise));
   const volumePromise = makePromise();
+  volumePromise.then(d => {
+    console.warn(`got volume (${d.length} bytes)`);
+    return d;
+  });
   app.put('/volume.glb', _readIntoPromise('glb', volumePromise));
   const aabbPromise = makePromise();
+  aabbPromise.then(d => {
+    console.warn(`got aabb (${d.length} bytes)`);
+    return d;
+  });
   app.put('/aabb.json', _readIntoPromise('json', aabbPromise));
   app.use(express.static(__dirname));
   const server = http.createServer(app);
