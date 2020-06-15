@@ -724,7 +724,7 @@ yargs
       _printNotLoggedIn();
     }
   })
-  .command('login', 'log in to wallet', yargs => {
+  .command('wallet', 'set up blockchain wallet', yargs => {
     yargs
       /* .positional('input', {
         describe: 'input file to build',
