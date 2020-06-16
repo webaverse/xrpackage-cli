@@ -43,6 +43,7 @@ const getContract = Promise.all([
 });
 
 const primaryUrl = 'https://xrpackage.org';
+const loginEndpoint = 'https://login.exokit.org';
 
 /* loadPromise.then(c => {
   const m = c.methods.mint([1, 1, 1], '0x0', 'hash', 'lol');
@@ -722,6 +723,55 @@ yargs
       console.log(seed);
     } else {
       _printNotLoggedIn();
+    }
+  })
+  .command('login', 'log in to web registry', yargs => {
+    yargs
+      /* .positional('input', {
+        describe: 'input file to build',
+        // default: 5000
+      }) */
+  }, async argv => {
+    handled = true;
+
+    const p = makePromise();
+    read({ prompt: 'email: ' }, function(er, seedPhrase) {
+      if (!er) {
+        p.accept(seedPhrase);
+      } else {
+        p.reject(er);
+      }
+    });
+    const email = await p;
+
+    const res = await fetch(loginEndpoint + `?email=${encodeURIComponent(email)}`, {
+      method: 'POST',
+    });
+    if (res.status >= 200 && res.status < 300) {
+      await res.json();
+
+      const p2 = makePromise();
+      read({ prompt: 'login code (check your email!): ' }, function(er, code) {
+        if (!er) {
+          p2.accept(code);
+        } else {
+          p2.reject(er);
+        }
+      });
+      const code = await p2;
+
+      const res2 = await fetch(loginEndpoint + `?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`, {
+        method: 'POST',
+      });
+      if (res2.status >= 200 && res2.status < 300) {
+        const loginToken = await res2.json();
+
+        // console.log('got login token', loginToken);
+      } else {
+        console.warn(`invalid status code: ${res2.status}`);
+      }
+    } else {
+      console.warn(`invalid status code: ${res2.status}`);
     }
   })
   .command('wallet', 'set up blockchain wallet', yargs => {
