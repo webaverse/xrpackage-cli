@@ -83,7 +83,7 @@ const _removeUrlTail = u => u.replace(/(?:\?|\#).*$/, '');
 async function getKs() {
   const ksString = (() => {
     try {
-      return fs.readFileSync(path.join(os.homedir(), '.xrpackage'));
+      return fs.readFileSync(path.join(os.homedir(), '.xrpackage-wallet'));
     } catch(err) {
       if (err.code === 'ENOENT') {
         return null;
@@ -766,7 +766,18 @@ yargs
       if (res2.status >= 200 && res2.status < 300) {
         const loginToken = await res2.json();
 
-        // console.log('got login token', loginToken);
+        const p3 = makePromise();
+        await mkdirp(os.homedir());
+        fs.writeFile(path.join(os.homedir(), '.xrpackage-login'), JSON.stringify(loginToken), err => {
+          if (!err) {
+            p3.accept();
+          } else {
+            p3.reject(err);
+          }
+        });
+        await p3;
+
+        console.log(`logged in as ${loginToken.name}`);
       } else {
         console.warn(`invalid status code: ${res2.status}`);
       }
@@ -825,7 +836,7 @@ yargs
     if (password) {
       const ks = await _createKeystore(seedPhrase, password);
       await mkdirp(os.homedir());
-      fs.writeFile(path.join(os.homedir(), '.xrpackage'), _exportKeyStore(ks), err => {
+      fs.writeFile(path.join(os.homedir(), '.xrpackage-wallet'), _exportKeyStore(ks), err => {
         if (!err) {
           p3.accept();
         } else {
