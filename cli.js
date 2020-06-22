@@ -251,7 +251,7 @@ const _isBaked = bundle => {
     return false;
   }
 };
-const _uploadPackage = async dataArrayBuffer => {
+const _uploadPackage = async (dataArrayBuffer, xrpkName) => {
   const bundle = new wbn.Bundle(dataArrayBuffer);
   const j = _getManifestJson(bundle);
   if (j) {
@@ -277,8 +277,8 @@ const _uploadPackage = async dataArrayBuffer => {
           });
         }
 
-        const objectName = typeof name === 'string' ? name : path.basename(argv.input);
-        const objectDescription = typeof description === 'string' ? description : `Package for ${path.basename(argv.input)}`;
+        const objectName = typeof name === 'string' ? name : path.basename(xrpkName);
+        const objectDescription = typeof description === 'string' ? description : `Package for ${path.basename(xrpkName)}`;
 
         console.warn('uploading data...');
         const dataHash = await fetch(`${apiHost}/`, {
@@ -864,7 +864,7 @@ yargs
     }
 
     const dataArrayBuffer = fs.readFileSync(argv.input);
-    const o = await _uploadPackage(dataArrayBuffer);
+    const o = await _uploadPackage(dataArrayBuffer, argv.input);
     const {metadata, metadataHash} = o;
     console.log('Name:', metadata.name);
     console.log('Description:', metadata.description);
@@ -895,7 +895,7 @@ yargs
     const j = _getManifestJson(bundle);
     if (j) {
       const {name} = j;
-      const o = await _uploadPackage(dataArrayBuffer);
+      const o = await _uploadPackage(dataArrayBuffer, argv.input);
       const {metadata, metadataHash} = o;
       console.log('Name:', metadata.name);
       console.log('Description:', metadata.description);
