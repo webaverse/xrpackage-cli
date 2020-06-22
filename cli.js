@@ -863,7 +863,7 @@ yargs
       argv.input = 'a.wbn';
     }
 
-    const dataArrayBuffer = fs.readFileSync(input);
+    const dataArrayBuffer = fs.readFileSync(argv.input);
     const o = await _uploadPackage(dataArrayBuffer);
     const {metadata, metadataHash} = o;
     console.log('Name:', metadata.name);
