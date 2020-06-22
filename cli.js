@@ -82,7 +82,7 @@ function makePromise() {
 }
 const packageNameRegex = /^[a-z0-9][a-z0-9-._~]*$/;
 const _isValidPackageName = name => packageNameRegex.test(name);
-const _removeUrlTail = u => u.replace(/(?:\?|\#).*$/, '');
+const _removeUrlTail = u => u.replace(/(?:\?|#).*$/, '');
 async function getKs() {
   const ksString = (() => {
     try {
@@ -784,7 +784,7 @@ yargs
         console.warn(`invalid status code: ${res2.status}`);
       }
     } else {
-      console.warn(`invalid status code: ${res2.status}`);
+      console.warn(`invalid status code: ${res.status}`);
     }
   })
   .command('wallet', 'set up blockchain wallet', yargs => {
@@ -1424,7 +1424,7 @@ yargs
             if (hasXrType && hasStartUrl) {
               xrType = j.xr_type;
               xrDetails = j.xr_details;
-              startUrl = j.start_url.replace(/(?:\?|\#).*$/, '');
+              startUrl = j.start_url.replace(/(?:\?|#).*$/, '');
               mimeType = xrTypeToMimeType[xrType] || 'application/octet-stream';
               fileInput = path.join(path.dirname(input), _removeUrlTail(startUrl));
               name = typeof j.name === 'string' ? j.name : path.basename(path.dirname(input));
