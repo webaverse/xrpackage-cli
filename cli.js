@@ -10,7 +10,6 @@ const url = require('url');
 
 const mkdirp = require('mkdirp');
 const yargs = require('yargs');
-const fetch = require('node-fetch');
 const mime = require('mime');
 const ignoreWalk = require('ignore-walk');
 const wbn = require('wbn');
@@ -20,16 +19,9 @@ const wbn = require('wbn');
 // const {BigNumber} = require('bignumber.js');
 const express = require('express');
 const open = require('open');
-const {
-  makePromise,
-  getManifestJson,
-  getContract,
-} = require('./utils');
+const {makePromise, getManifestJson} = require('./utils');
 
-const {
-  apiHost,
-  port,
-} = require('./constants');
+const {port} = require('./constants');
 
 const primaryUrl = 'https://xrpackage.org';
 
@@ -467,44 +459,7 @@ yargs
   .command(require('./commends/count'))
   .command(require('./commands/run'))
   .command(require('./commands/inspect'))
-  .command('install [id]', 'install package with given id', yargs => {
-    yargs
-      .positional('id', {
-        describe: 'id of package to install',
-        // default: 5000
-      });
-  }, async argv => {
-    handled = true;
-
-    const contract = await getContract;
-
-    const metadataHash = await contract.methods.getMetadata(parseInt(argv.id, 10), 'hash').call();
-    const metadata = await fetch(`${apiHost}/${metadataHash}`)
-      .then(res => res.json());
-    // console.log(metadata);
-    const {dataHash, screenshotHash, modelHash} = metadata;
-
-    console.log('downloading...');
-    await Promise.all([
-      fetch(`${apiHost}/${dataHash}`)
-        .then(res => res.arrayBuffer())
-        .then(arrayBuffer => {
-          fs.writeFileSync('a.wbn', Buffer.from(arrayBuffer));
-        }),
-      fetch(`${apiHost}/${screenshotHash}`)
-        .then(res => res.arrayBuffer())
-        .then(arrayBuffer => {
-          fs.writeFileSync('a.wbn.gif', Buffer.from(arrayBuffer));
-        }),
-      fetch(`${apiHost}/${modelHash}`)
-        .then(res => res.arrayBuffer())
-        .then(arrayBuffer => {
-          fs.writeFileSync('a.wbn.glb', Buffer.from(arrayBuffer));
-        }),
-    ]);
-
-    console.log('a.wbn');
-  })
+  .command(require('./commands/install'))
   .command('init', 'initialize xrpackage with manifest.json', yargs => {
     yargs
       .positional('input', {
