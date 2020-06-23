@@ -21,18 +21,18 @@ module.exports = {
 
     const dataArrayBuffer = fs.readFileSync(argv.input);
     const bundle = new wbn.Bundle(dataArrayBuffer);
-    const j = getManifestJson(bundle);
-    if (j) {
-      const {icons} = j;
+    const manifest = getManifestJson(bundle);
+    if (manifest) {
+      const {icons} = manifest;
       if (icons) {
         for (const icon of icons) {
           if (icon) {
             const {src, type} = icon;
-            const p = '/' + src;
-            const u = bundle.urls.find(u => new url.URL(u).pathname === p);
+            const path = '/' + src;
+            const bundleUrl = bundle.urls.find(u => new url.URL(u).pathname === path);
             let desc;
-            if (u) {
-              const res = bundle.getResponse(u);
+            if (bundleUrl) {
+              const res = bundle.getResponse(bundleUrl);
               const {body} = res;
               desc = `${body.length}`;
             } else {
