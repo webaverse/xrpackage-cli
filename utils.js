@@ -1,16 +1,19 @@
-const fs = require('fs');
 const path = require('path');
-const os = require('os');
+const fs = require('fs');
+const http = require('http');
+const url = require('url');
 
+const express = require('express');
 const read = require('read');
 const fetch = require('node-fetch');
 const wbn = require('wbn');
+const open = require('open');
 
 const Web3 = require('./web3');
 const lightwallet = require('./eth-lightwallet');
 const {apiHost} = require('../constants');
 
-const {rpcUrl} = require('./constants');
+const {rpcUrl, port, primaryUrl} = require('./constants');
 const web3 = new Web3(new Web3.providers.HttpProvider(rpcUrl));
 
 const hdPathString = 'm/44\'/60\'/0\'/0';
@@ -172,6 +175,109 @@ const getContract = Promise.all([
   return new web3.eth.Contract(abi, address);
 });
 
+const cloneBundle = (bundle, options = {}) => {
+  const except = options.except || [];
+  const urlSpec = new url.URL(bundle.primaryURL);
+  const primaryUrl = urlSpec.origin;
+  const startUrl = urlSpec.pathname.replace(/^\//, '');
+  const builder = new wbn.BundleBuilder(primaryUrl + '/' + startUrl);
+  for (const u of bundle.urls) {
+    const {pathname} = new url.URL(u);
+    if (!except.includes(pathname)) {
+      const res = bundle.getResponse(u);
+      const type = res.headers['content-type'];
+      const data = res.body;
+      builder.addExchange(primaryUrl + pathname, 200, {
+        'Content-Type': type,
+      }, data);
+    }
+  }
+  return builder;
+};
+
+const screenshotApp = async output => {
+  const app = express();
+  app.use((req, res, next) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', '*');
+    res.set('Access-Control-Allow-Headers', '*');
+    next();
+  });
+  app.get('/a.wbn', (req, res) => {
+    fs.createReadStream(output).pipe(res);
+  });
+  const _readIntoPromise = (type, p) => (req, res) => {
+    // console.log(`got ${type} request`);
+
+    const bs = [];
+    req.on('data', d => {
+      bs.push(d);
+    });
+    req.once('end', () => {
+      const d = Buffer.concat(bs);
+      p.accept(d);
+      res.end();
+    });
+    req.once('error', p.reject);
+  };
+  const gifPromise = makePromise();
+  gifPromise.then(d => {
+    console.warn(`got screenshot (${d.length} bytes)`);
+    return d;
+  });
+  app.put('/screenshot.gif', _readIntoPromise('gif', gifPromise));
+  app.use(express.static(__dirname));
+  const server = http.createServer(app);
+  const connections = [];
+  server.on('connection', c => {
+    connections.push(c);
+  });
+  server.listen(port, () => {
+    open(`https://xrpackage.org/screenshot.html?srcWbn%3Dhttp://localhost:${port}/a.wbn%26dstGif%3Dhttp://localhost:${port}/screenshot.gif`);
+  });
+
+  const [gifUint8Array] = await Promise.all([gifPromise]);
+  server.close();
+  for (let i = 0; i < connections.length; i++) {
+    connections[i].destroy();
+  }
+
+  const bundleBuffer = fs.readFileSync(output);
+  const bundle = new wbn.Bundle(bundleBuffer);
+
+  const res = bundle.getResponse('https://xrpackage.org/manifest.json');
+  const s = res.body.toString('utf8');
+  const manifestJson = JSON.parse(s);
+
+  const builder = cloneBundle(bundle, {
+    except: ['/manifest.json'],
+  });
+
+  manifestJson.icons = Array.isArray(manifestJson.icons) ? manifestJson.icons : [];
+  if (gifUint8Array.length > 0) {
+    builder.addExchange(primaryUrl + '/xrpackage_icon.gif', 200, {
+      'Content-Type': 'image/gif',
+    }, gifUint8Array);
+
+    let gifIcon = manifestJson.icons.find(icon => icon.type === 'image/gif');
+    if (!gifIcon) {
+      gifIcon = {
+        src: '',
+        type: 'image/gif',
+      };
+      manifestJson.icons.push(gifIcon);
+    }
+    gifIcon.src = 'xrpackage_icon.gif';
+  }
+
+  builder.addExchange(primaryUrl + '/manifest.json', 200, {
+    'Content-Type': 'application/json',
+  }, JSON.stringify(manifestJson, null, 2));
+
+  const buffer = builder.createBundle();
+  fs.writeFileSync(output, buffer);
+};
+
 const printNotLoggedIn = () => console.warn('not logged in; use xrpk login');
 
 async function _exportSeed(ks, password) {
@@ -266,6 +372,8 @@ module.exports = {
   getManifestJson,
   uploadPackage,
   getContract,
+  screenshotApp,
+  cloneBundle,
 
   web3,
 };

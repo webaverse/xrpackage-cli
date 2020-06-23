@@ -19,7 +19,7 @@ const wbn = require('wbn');
 // const {BigNumber} = require('bignumber.js');
 const express = require('express');
 const open = require('open');
-const {makePromise, getManifestJson} = require('./utils');
+const {makePromise, getManifestJson, screenshotApp, cloneBundle} = require('./utils');
 
 const {port, primaryUrl} = require('./constants');
 
@@ -47,108 +47,6 @@ try {
 
 const _removeUrlTail = u => u.replace(/(?:\?|#).*$/, '');
 
-const _cloneBundle = (bundle, options = {}) => {
-  const except = options.except || [];
-  const urlSpec = new url.URL(bundle.primaryURL);
-  const primaryUrl = urlSpec.origin;
-  const startUrl = urlSpec.pathname.replace(/^\//, '');
-  const builder = new wbn.BundleBuilder(primaryUrl + '/' + startUrl);
-  for (const u of bundle.urls) {
-    const {pathname} = new url.URL(u);
-    if (!except.includes(pathname)) {
-      const res = bundle.getResponse(u);
-      const type = res.headers['content-type'];
-      const data = res.body;
-      builder.addExchange(primaryUrl + pathname, 200, {
-        'Content-Type': type,
-      }, data);
-    }
-  }
-  return builder;
-};
-
-const _screenshotApp = async output => {
-  const app = express();
-  app.use((req, res, next) => {
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', '*');
-    res.set('Access-Control-Allow-Headers', '*');
-    next();
-  });
-  app.get('/a.wbn', (req, res) => {
-    fs.createReadStream(output).pipe(res);
-  });
-  const _readIntoPromise = (type, p) => (req, res) => {
-    // console.log(`got ${type} request`);
-
-    const bs = [];
-    req.on('data', d => {
-      bs.push(d);
-    });
-    req.once('end', () => {
-      const d = Buffer.concat(bs);
-      p.accept(d);
-      res.end();
-    });
-    req.once('error', p.reject);
-  };
-  const gifPromise = makePromise();
-  gifPromise.then(d => {
-    console.warn(`got screenshot (${d.length} bytes)`);
-    return d;
-  });
-  app.put('/screenshot.gif', _readIntoPromise('gif', gifPromise));
-  app.use(express.static(__dirname));
-  const server = http.createServer(app);
-  const connections = [];
-  server.on('connection', c => {
-    connections.push(c);
-  });
-  server.listen(port, () => {
-    open(`https://xrpackage.org/screenshot.html?srcWbn%3Dhttp://localhost:${port}/a.wbn%26dstGif%3Dhttp://localhost:${port}/screenshot.gif`);
-  });
-
-  const [gifUint8Array] = await Promise.all([gifPromise]);
-  server.close();
-  for (let i = 0; i < connections.length; i++) {
-    connections[i].destroy();
-  }
-
-  const bundleBuffer = fs.readFileSync(output);
-  const bundle = new wbn.Bundle(bundleBuffer);
-
-  const res = bundle.getResponse('https://xrpackage.org/manifest.json');
-  const s = res.body.toString('utf8');
-  const manifestJson = JSON.parse(s);
-
-  const builder = _cloneBundle(bundle, {
-    except: ['/manifest.json'],
-  });
-
-  manifestJson.icons = Array.isArray(manifestJson.icons) ? manifestJson.icons : [];
-  if (gifUint8Array.length > 0) {
-    builder.addExchange(primaryUrl + '/xrpackage_icon.gif', 200, {
-      'Content-Type': 'image/gif',
-    }, gifUint8Array);
-
-    let gifIcon = manifestJson.icons.find(icon => icon.type === 'image/gif');
-    if (!gifIcon) {
-      gifIcon = {
-        src: '',
-        type: 'image/gif',
-      };
-      manifestJson.icons.push(gifIcon);
-    }
-    gifIcon.src = 'xrpackage_icon.gif';
-  }
-
-  builder.addExchange(primaryUrl + '/manifest.json', 200, {
-    'Content-Type': 'application/json',
-  }, JSON.stringify(manifestJson, null, 2));
-
-  const buffer = builder.createBundle();
-  fs.writeFileSync(output, buffer);
-};
 const _volumeApp = async output => {
   const app = express();
   app.use((req, res, next) => {
@@ -207,7 +105,7 @@ const _volumeApp = async output => {
   const s = res.body.toString('utf8');
   const manifestJson = JSON.parse(s);
 
-  const builder = _cloneBundle(bundle, {
+  const builder = cloneBundle(bundle, {
     except: ['/manifest.json'],
   });
 
@@ -252,7 +150,7 @@ const _modelApp = async output => {
   const manifestJson = JSON.parse(s);
   const {start_url: startUrl, xr_type: xrType} = manifestJson;
 
-  const builder = _cloneBundle(bundle, {
+  const builder = cloneBundle(bundle, {
     except: ['/manifest.json'],
   });
 
@@ -360,7 +258,7 @@ const _bakeApp = async output => {
   const s = res.body.toString('utf8');
   const manifestJson = JSON.parse(s);
 
-  const builder = _cloneBundle(bundle, {
+  const builder = cloneBundle(bundle, {
     except: ['/manifest.json'],
   });
 
@@ -668,7 +566,7 @@ yargs
       fs.writeFileSync(argv.output, uint8Array);
 
       if (argv.screenshot) {
-        await _screenshotApp(argv.output);
+        await screenshotApp(argv.output);
       }
       console.log(argv.output);
     }
@@ -685,7 +583,7 @@ yargs
       argv.input = 'a.wbn';
     }
 
-    await _screenshotApp(argv.input);
+    await screenshotApp(argv.input);
   })
   .command('volume [input]', 'generate a volume of the package at [input]', yargs => {
     yargs
