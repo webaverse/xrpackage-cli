@@ -28,7 +28,7 @@ const open = require('open');
 const {
   makePromise,
   getKs,
-  _createKeystore,
+  createKeystore,
 } = require('./utils');
 
 const apiHost = 'https://ipfs.exokit.org/ipfs';
@@ -711,7 +711,7 @@ yargs
 
     const p3 = makePromise();
     if (password) {
-      const ks = await _createKeystore(seedPhrase, password);
+      const ks = await createKeystore(seedPhrase, password);
       await mkdirp(os.homedir());
       fs.writeFile(path.join(os.homedir(), '.xrpackage-wallet'), _exportKeyStore(ks), err => {
         if (!err) {

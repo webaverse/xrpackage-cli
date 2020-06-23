@@ -8,7 +8,7 @@ const lightwallet = require('./eth-lightwallet');
 
 const hdPathString = 'm/44\'/60\'/0\'/0';
 
-const _createKeystore = async (seedPhrase, password) => {
+const createKeystore = async (seedPhrase, password) => {
   const p = makePromise();
   lightwallet.keystore.createVault({
     password,
@@ -33,9 +33,9 @@ const _createKeystore = async (seedPhrase, password) => {
     }
   });
   const ks = await p;
-  ks.exportSeed = exportSeed.bind(null, ks, password);
-  ks.signTx = signTx.bind(null, ks, password);
-  ks.getPrivateKey = getPrivateKey.bind(null, ks, password);
+  ks.exportSeed = _exportSeed.bind(null, ks, password);
+  ks.signTx = _signTx.bind(null, ks, password);
+  ks.getPrivateKey = _getPrivateKey.bind(null, ks, password);
   return ks;
 };
 
@@ -50,7 +50,7 @@ function makePromise() {
   return p;
 }
 
-async function exportSeed(ks, password) {
+async function _exportSeed(ks, password) {
   const p = makePromise();
   ks.keyFromPassword(password, function(err, pwDerivedKey) {
     if (!err) {
@@ -63,7 +63,7 @@ async function exportSeed(ks, password) {
   return await p;
 }
 
-async function signTx(ks, password, rawTx) {
+async function _signTx(ks, password, rawTx) {
   const p = makePromise();
   ks.keyFromPassword(password, function(err, pwDerivedKey) {
     if (!err) {
@@ -78,7 +78,7 @@ async function signTx(ks, password, rawTx) {
   return await p;
 }
 
-async function getPrivateKey(ks, password) {
+async function _getPrivateKey(ks, password) {
   const p = makePromise();
   ks.keyFromPassword(password, function(err, pwDerivedKey) {
     if (!err) {
@@ -107,9 +107,9 @@ const _importKeyStore = async (s, password) => {
     }
   });
   await p;
-  ks.exportSeed = exportSeed.bind(null, ks, password);
-  ks.signTx = signTx.bind(null, ks, password);
-  ks.getPrivateKey = getPrivateKey.bind(null, ks, password);
+  ks.exportSeed = _exportSeed.bind(null, ks, password);
+  ks.signTx = _signTx.bind(null, ks, password);
+  ks.getPrivateKey = _getPrivateKey.bind(null, ks, password);
   return ks;
 };
 
@@ -145,5 +145,5 @@ async function getKs() {
 module.exports = {
   makePromise,
   getKs,
-  _createKeystore,
+  createKeystore,
 };
