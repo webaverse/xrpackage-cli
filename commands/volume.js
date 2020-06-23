@@ -6,7 +6,7 @@ const open = require('open');
 const wbn = require('wbn');
 
 const {makePromise, port} = require('../utils');
-const {primaryUrl, cloneBundle} = require('../constant');
+const {primaryUrl, cloneBundle} = require('../constants');
 
 const _volumeApp = async output => {
   const app = express();

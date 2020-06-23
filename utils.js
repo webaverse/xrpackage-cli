@@ -12,9 +12,8 @@ const open = require('open');
 
 const Web3 = require('./web3');
 const lightwallet = require('./eth-lightwallet');
-const {apiHost} = require('../constants');
 
-const {rpcUrl, port, primaryUrl} = require('./constants');
+const {rpcUrl, port, primaryUrl, apiHost} = require('./constants');
 const web3 = new Web3(new Web3.providers.HttpProvider(rpcUrl));
 
 const hdPathString = 'm/44\'/60\'/0\'/0';

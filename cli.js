@@ -43,7 +43,7 @@ yargs
   .command(require('./commands/unpublish'))
   .command(require('./commands/mint'))
   .command(require('./commands/ls'))
-  .command(require('./commends/count'))
+  .command(require('./commands/count'))
   .command(require('./commands/run'))
   .command(require('./commands/inspect'))
   .command(require('./commands/install'))

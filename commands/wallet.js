@@ -6,7 +6,7 @@ const os = require('os');
 const read = require('read');
 const mkdirp = require('mkdirp');
 
-const lightwallet = require('./eth-lightwallet');
+const lightwallet = require('../eth-lightwallet');
 const {makePromise, createKeystore} = require('../utils');
 
 const _exportKeyStore = ks => ks.serialize();
