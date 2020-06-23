@@ -3,7 +3,8 @@ const fs = require('fs');
 
 const wbn = require('wbn');
 
-const {primaryUrl, cloneBundle} = require('../constants');
+const {primaryUrl} = require('../constants');
+const {cloneBundle} = require('../utils');
 
 const _modelApp = async output => {
   const bundleBuffer = fs.readFileSync(output);

@@ -5,8 +5,8 @@ const express = require('express');
 const open = require('open');
 const wbn = require('wbn');
 
-const {makePromise, port} = require('../utils');
-const {primaryUrl, cloneBundle} = require('../constants');
+const {makePromise, cloneBundle} = require('../utils');
+const {primaryUrl, port} = require('../constants');
 
 const _readIntoPromise = (type, p) => (req, res) => {
   const bs = [];
