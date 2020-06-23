@@ -114,13 +114,9 @@ module.exports = {
     yargs
       .positional('input', {
         describe: 'built package to volume (a.wbn)',
+        type: 'string',
+        default: 'a.wbn',
       });
   },
-  handler: async (argv) => {
-    if (typeof argv.input !== 'string') {
-      argv.input = 'a.wbn';
-    }
-
-    await _volumeApp(argv.input);
-  },
+  handler: async (argv) => await _volumeApp(argv.input),
 };

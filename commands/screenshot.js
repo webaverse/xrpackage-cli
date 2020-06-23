@@ -7,13 +7,9 @@ module.exports = {
     yargs
       .positional('input', {
         describe: 'built package to screenshot (a.wbn)',
+        type: 'string',
+        default: 'a.wbn',
       });
   },
-  handler: async (argv) => {
-    if (typeof argv.input !== 'string') {
-      argv.input = 'a.wbn';
-    }
-
-    await screenshotApp(argv.input);
-  },
+  handler: async (argv) => await screenshotApp(argv.input),
 };

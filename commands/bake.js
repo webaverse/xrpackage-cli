@@ -167,13 +167,11 @@ module.exports = {
     yargs
       .positional('input', {
         describe: 'built package to bake (a.wbn)',
+        type: 'string',
+        default: 'a.wbn',
       });
   },
   handler: async (argv) => {
-    if (typeof argv.input !== 'string') {
-      argv.input = 'a.wbn';
-    }
-
     await _bakeApp(argv.input);
   },
 };

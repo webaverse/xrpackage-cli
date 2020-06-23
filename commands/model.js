@@ -66,13 +66,9 @@ module.exports = {
     yargs
       .positional('input', {
         describe: 'built package to model (a.wbn)',
+        type: 'string',
+        default: 'a.wbn',
       });
   },
-  handler: async (argv) => {
-    if (typeof argv.input !== 'string') {
-      argv.input = 'a.wbn';
-    }
-
-    await _modelApp(argv.input);
-  },
+  handler: async (argv) => await _modelApp(argv.input),
 };

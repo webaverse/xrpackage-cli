@@ -15,13 +15,11 @@ module.exports = {
     yargs
       .positional('input', {
         describe: '.wbn package to mint',
+        type: 'string',
+        default: 'a.wbn',
       });
   },
   handler: async argv => {
-    if (typeof argv.input !== 'string') {
-      argv.input = 'a.wbn';
-    }
-
     const ks = await getKs();
     if (!ks) return printNotLoggedIn();
 

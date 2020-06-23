@@ -57,9 +57,13 @@ module.exports = {
     yargs
       .positional('input', {
         describe: 'input file to build',
+        type: 'string',
+        default: '.',
       })
       .positional('output', {
         describe: 'output file to write',
+        type: 'string',
+        default: 'a.wbn',
       })
       .option('screenshot', {
         alias: 's',
@@ -68,13 +72,6 @@ module.exports = {
       });
   },
   handler: async (argv) => {
-    if (typeof argv.input !== 'string') {
-      argv.input = '.';
-    }
-    if (typeof argv.output !== 'string') {
-      argv.output = 'a.wbn';
-    }
-
     let fileInput, startUrl, xrType, xrDetails, mimeType, name, description, directory;
     const _detectType = input => {
       const type = xrTypes.find(type => type.regex.test(input));

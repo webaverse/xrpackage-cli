@@ -10,13 +10,11 @@ module.exports = {
     yargs
       .positional('input', {
         describe: '.wbn package to upload',
+        type: 'string',
+        default: 'a.wbn',
       });
   },
   handler: async argv => {
-    if (typeof argv.input !== 'string') {
-      argv.input = 'a.wbn';
-    }
-
     const dataArrayBuffer = fs.readFileSync(argv.input);
     const o = await uploadPackage(dataArrayBuffer, argv.input);
     const {metadata, metadataHash} = o;

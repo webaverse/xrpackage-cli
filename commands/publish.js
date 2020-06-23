@@ -13,13 +13,11 @@ module.exports = {
     yargs
       .positional('input', {
         describe: '.wbn package to publish',
+        type: 'string',
+        default: 'a.wbn',
       });
   },
   handler: async argv => {
-    if (typeof argv.input !== 'string') {
-      argv.input = 'a.wbn';
-    }
-
     const dataArrayBuffer = fs.readFileSync(argv.input);
     const bundle = new wbn.Bundle(dataArrayBuffer);
 
