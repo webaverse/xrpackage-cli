@@ -40,8 +40,3 @@ yargs
   .demandCommand()
   .recommendCommands()
   .argv;
-/* .option('verbose', {
-    alias: 'v',
-    type: 'boolean',
-    description: 'Run with verbose logging'
-  }) */
