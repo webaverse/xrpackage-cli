@@ -31,12 +31,15 @@ try {
   console.warn(err);
 } */
 
+let handled = false;
 yargs
   .scriptName('xrpk')
+  .middleware([() => { handled = true; }])
   .commandDir('./commands', {
     recurse: false,
     extensions: ['js'],
   })
-  .demandCommand()
-  .recommendCommands()
+  .showHelpOnFail(false)
   .argv;
+
+if (!handled) yargs.showHelp();
