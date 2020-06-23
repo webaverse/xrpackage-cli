@@ -25,16 +25,20 @@ const {
   makePromise,
   getKs,
   printNotLoggedIn,
+  uploadPackage,
+  getManifestJson,
 } = require('./utils');
 
-const apiHost = 'https://ipfs.exokit.org/ipfs';
-const packagesEndpoint = 'https://packages.exokit.org';
-const tokenHost = 'https://tokens.webaverse.com';
-const network = 'rinkeby';
-const infuraApiKey = '4fb939301ec543a0969f3019d74f80c2';
-const rpcUrl = `https://${network}.infura.io/v3/${infuraApiKey}`;
+const {
+  apiHost,
+  packagesEndpoint,
+  tokenHost,
+  network,
+  rpcUrl,
+  port,
+} = require('./constants');
+
 const web3 = new Web3(new Web3.providers.HttpProvider(rpcUrl));
-const port = 9999;
 
 const getContract = Promise.all([
   fetch('https://contracts.webaverse.com/address.js').then(res => res.text()).then(s => s.replace(/^export default `(.+?)`[\s\S]*$/, '$1')),
@@ -68,8 +72,6 @@ try {
   console.warn(err);
 } */
 
-const packageNameRegex = /^[a-z0-9][a-z0-9-._~]*$/;
-const _isValidPackageName = name => packageNameRegex.test(name);
 const _removeUrlTail = u => u.replace(/(?:\?|#).*$/, '');
 
 const _cloneBundle = (bundle, options = {}) => {
@@ -91,98 +93,7 @@ const _cloneBundle = (bundle, options = {}) => {
   }
   return builder;
 };
-const _getManifestJson = bundle => {
-  if (bundle.urls.includes('https://xrpackage.org/manifest.json')) {
-    const response = bundle.getResponse('https://xrpackage.org/manifest.json');
-    const s = response.body.toString('utf8');
-    const j = JSON.parse(s);
-    return j;
-  } else {
-    return null;
-  }
-};
-const _isNamed = bundle => {
-  const j = _getManifestJson(bundle);
-  return !!j && typeof j.name === 'string' && _isValidPackageName(j.name);
-};
-const _isBaked = bundle => {
-  const j = _getManifestJson(bundle);
-  if (j) {
-    const {icons} = j;
-    if (Array.isArray(icons)) {
-      return ['image/gif', 'model/gltf-binary', 'model/gltf-binary+preview'].every(type => icons.some(i => i && i.type === type));
-    } else {
-      return false;
-    }
-  } else {
-    return false;
-  }
-};
-const _uploadPackage = async (dataArrayBuffer, xrpkName) => {
-  const bundle = new wbn.Bundle(dataArrayBuffer);
-  const j = _getManifestJson(bundle);
-  if (j) {
-    if (_isNamed(bundle)) {
-      if (_isBaked(bundle)) {
-        const {name, description, icons = []} = j;
 
-        const iconObjects = [];
-        for (let i = 0; i < icons.length; i++) {
-          const icon = icons[i];
-          const {src, type} = icon;
-          console.warn(`uploading icon "${type}" (${i + 1}/${icons.length})...`);
-          const response = bundle.getResponse(`https://xrpackage.org/${src}`);
-          const hash = await fetch(`${apiHost}/`, {
-            method: 'PUT',
-            body: response.body,
-          })
-            .then(res => res.json())
-            .then(j => j.hash);
-          iconObjects.push({
-            hash,
-            type,
-          });
-        }
-
-        const objectName = typeof name === 'string' ? name : path.basename(xrpkName);
-        const objectDescription = typeof description === 'string' ? description : `Package for ${path.basename(xrpkName)}`;
-
-        console.warn('uploading data...');
-        const dataHash = await fetch(`${apiHost}/`, {
-          method: 'PUT',
-          body: dataArrayBuffer,
-        })
-          .then(res => res.json())
-          .then(j => j.hash);
-
-        console.warn('uploading metadata...');
-        const metadata = {
-          name: objectName,
-          description: objectDescription,
-          icons: iconObjects,
-          dataHash,
-        };
-        const metadataHash = await fetch(`${apiHost}/`, {
-          method: 'PUT',
-          body: JSON.stringify(metadata),
-        })
-          .then(res => res.json())
-          .then(j => j.hash);
-
-        return {
-          metadata,
-          metadataHash,
-        };
-      } else {
-        throw 'package is not baked; try xrpk bake';
-      }
-    } else {
-      throw `package does not have a valid "name" in manifest.json (${packageNameRegex.toString()})`;
-    }
-  } else {
-    throw 'no manifest.json in package';
-  }
-};
 const _screenshotApp = async output => {
   const app = express();
   app.use((req, res, next) => {
@@ -579,7 +490,7 @@ yargs
     }
 
     const dataArrayBuffer = fs.readFileSync(argv.input);
-    const o = await _uploadPackage(dataArrayBuffer, argv.input);
+    const o = await uploadPackage(dataArrayBuffer, argv.input);
     const {metadata, metadataHash} = o;
     console.log('Name:', metadata.name);
     console.log('Description:', metadata.description);
@@ -607,10 +518,10 @@ yargs
 
     const dataArrayBuffer = fs.readFileSync(argv.input);
     const bundle = new wbn.Bundle(dataArrayBuffer);
-    const j = _getManifestJson(bundle);
+    const j = getManifestJson(bundle);
     if (j) {
       const {name} = j;
-      const o = await _uploadPackage(dataArrayBuffer, argv.input);
+      const o = await uploadPackage(dataArrayBuffer, argv.input);
       const {metadata, metadataHash} = o;
       console.log('Name:', metadata.name);
       console.log('Description:', metadata.description);
@@ -1380,7 +1291,7 @@ yargs
 
     const dataArrayBuffer = fs.readFileSync(argv.input);
     const bundle = new wbn.Bundle(dataArrayBuffer);
-    const j = _getManifestJson(bundle);
+    const j = getManifestJson(bundle);
     if (j) {
       const {icons} = j;
       if (icons) {

@@ -3,10 +3,14 @@ const path = require('path');
 const os = require('os');
 
 const read = require('read');
+const fetch = require('node-fetch');
+const wbn = require('wbn');
 
 const lightwallet = require('./eth-lightwallet');
+const {apiHost} = require('../constants');
 
 const hdPathString = 'm/44\'/60\'/0\'/0';
+const packageNameRegex = /^[a-z0-9][a-z0-9-._~]*$/;
 
 function makePromise() {
   let accept, reject;
@@ -79,6 +83,83 @@ async function getKs() {
   }
 }
 
+const getManifestJson = bundle => {
+  if (bundle.urls.includes('https://xrpackage.org/manifest.json')) {
+    const response = bundle.getResponse('https://xrpackage.org/manifest.json');
+    const s = response.body.toString('utf8');
+    const j = JSON.parse(s);
+    return j;
+  } else {
+    return null;
+  }
+};
+
+const uploadPackage = async (dataArrayBuffer, xrpkName) => {
+  const bundle = new wbn.Bundle(dataArrayBuffer);
+  const j = getManifestJson(bundle);
+  if (j) {
+    if (_isNamed(bundle)) {
+      if (_isBaked(bundle)) {
+        const {name, description, icons = []} = j;
+
+        const iconObjects = [];
+        for (let i = 0; i < icons.length; i++) {
+          const icon = icons[i];
+          const {src, type} = icon;
+          console.warn(`uploading icon "${type}" (${i + 1}/${icons.length})...`);
+          const response = bundle.getResponse(`https://xrpackage.org/${src}`);
+          const hash = await fetch(`${apiHost}/`, {
+            method: 'PUT',
+            body: response.body,
+          })
+            .then(res => res.json())
+            .then(j => j.hash);
+          iconObjects.push({
+            hash,
+            type,
+          });
+        }
+
+        const objectName = typeof name === 'string' ? name : path.basename(xrpkName);
+        const objectDescription = typeof description === 'string' ? description : `Package for ${path.basename(xrpkName)}`;
+
+        console.warn('uploading data...');
+        const dataHash = await fetch(`${apiHost}/`, {
+          method: 'PUT',
+          body: dataArrayBuffer,
+        })
+          .then(res => res.json())
+          .then(j => j.hash);
+
+        console.warn('uploading metadata...');
+        const metadata = {
+          name: objectName,
+          description: objectDescription,
+          icons: iconObjects,
+          dataHash,
+        };
+        const metadataHash = await fetch(`${apiHost}/`, {
+          method: 'PUT',
+          body: JSON.stringify(metadata),
+        })
+          .then(res => res.json())
+          .then(j => j.hash);
+
+        return {
+          metadata,
+          metadataHash,
+        };
+      } else {
+        throw 'package is not baked; try xrpk bake';
+      }
+    } else {
+      throw `package does not have a valid "name" in manifest.json (${packageNameRegex.toString()})`;
+    }
+  } else {
+    throw 'no manifest.json in package';
+  }
+};
+
 const printNotLoggedIn = () => console.warn('not logged in; use xrpk login');
 
 async function _exportSeed(ks, password) {
@@ -144,9 +225,32 @@ const _importKeyStore = async (s, password) => {
   return ks;
 };
 
+const _isValidPackageName = name => packageNameRegex.test(name);
+
+const _isNamed = bundle => {
+  const j = getManifestJson(bundle);
+  return !!j && typeof j.name === 'string' && _isValidPackageName(j.name);
+};
+
+const _isBaked = bundle => {
+  const j = getManifestJson(bundle);
+  if (j) {
+    const {icons} = j;
+    if (Array.isArray(icons)) {
+      return ['image/gif', 'model/gltf-binary', 'model/gltf-binary+preview'].every(type => icons.some(i => i && i.type === type));
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+};
+
 module.exports = {
   makePromise,
   createKeystore,
   getKs,
   printNotLoggedIn,
+  getManifestJson,
+  uploadPackage,
 };
