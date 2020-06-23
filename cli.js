@@ -61,38 +61,7 @@ yargs
   .command(require('./commands/model'))
   .command(require('./commands/bake'))
   .command(require('./commands/view'))
-  .command('cat [input] [path]', 'cat contents of file inside .wbn to stdout', yargs => {
-    yargs
-      .positional('input', {
-        describe: 'input .wbn file',
-        // default: 5000
-      })
-      .positional('path', {
-        describe: 'file path inside the .wbn to cat',
-        // default: 5000
-      });
-  }, async argv => {
-    handled = true;
-
-    if (argv.input) {
-      if (argv.path) {
-        const d = fs.readFileSync(argv.input);
-        const bundle = new wbn.Bundle(d);
-        const p = path.normalize(path.join('/', argv.path)).replace(/\\/g, '/');
-        const u = bundle.urls.find(u => new url.URL(u).pathname === p);
-        if (u) {
-          const res = bundle.getResponse(u);
-          process.stdout.write(res.body);
-        } else {
-          throw `file not found: ${argv.path}`;
-        }
-      } else {
-        throw 'missing path';
-      }
-    } else {
-      throw 'missing input file';
-    }
-  })
+  .command(require('./commands/cat'))
   .command('icon [input]', 'print icons of a package', yargs => {
     yargs
       .positional('input', {
