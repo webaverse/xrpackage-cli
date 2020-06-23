@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-disable no-throw-literal */
 /* eslint-disable no-unused-expressions */
 
 Error.stackTraceLimit = 300;
@@ -71,7 +70,6 @@ try {
 
 function makePromise() {
   let accept, reject;
-  // eslint-disable-next-line promise/param-names
   const p = new Promise((a, r) => {
     accept = a;
     reject = r;
@@ -695,8 +693,8 @@ let handled = false;
 yargs
   .scriptName('xrpk')
   .command('whoami', 'print logged in address', yargs => {
-    yargs;
-    /* .positional('input', {
+    /* yargs
+      .positional('input', {
         describe: 'input file to build',
         // default: 5000
       }) */
@@ -711,8 +709,8 @@ yargs
     }
   })
   .command('privatekey', 'export private key menmonic', yargs => {
-    yargs;
-    /* .positional('input', {
+    /* yargs
+      .positional('input', {
         describe: 'input file to build',
         // default: 5000
       }) */
@@ -728,8 +726,8 @@ yargs
     }
   })
   .command('login', 'log in to web registry', yargs => {
-    yargs;
-    /* .positional('input', {
+    /* yargs
+      .positional('input', {
         describe: 'input file to build',
         // default: 5000
       }) */
@@ -788,8 +786,8 @@ yargs
     }
   })
   .command('wallet', 'set up blockchain wallet', yargs => {
-    yargs;
-    /* .positional('input', {
+    /* yargs
+      .positional('input', {
         describe: 'input file to build',
         // default: 5000
       }) */
@@ -1054,8 +1052,8 @@ yargs
     }
   })
   .command('ls', 'list wallet inventory', yargs => {
-    yargs;
-    /* .positional('id', {
+    /* yargs
+      .positional('id', {
         describe: 'id of package to install',
         // default: 5000
       }) */
@@ -1105,8 +1103,8 @@ yargs
     }
   })
   .command('count', 'get count of minted packages', yargs => {
-    yargs;
-    /* .positional('id', {
+    /* yargs
+      .positional('id', {
         describe: 'id of package to install',
         // default: 5000
       }) */
