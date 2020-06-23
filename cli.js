@@ -25,7 +25,6 @@ const {
   makePromise,
   getKs,
   printNotLoggedIn,
-  uploadPackage,
   getManifestJson,
 } = require('./utils');
 
@@ -477,52 +476,7 @@ yargs
   .command(require('./commands/login'))
   .command(require('./commands/wallet'))
   .command(require('./commands/upload'))
-  .command('publish [input]', 'publish a package to ipfs', yargs => {
-    yargs
-      .positional('input', {
-        describe: '.wbn package to publish',
-        // default: 5000
-      });
-  }, async argv => {
-    handled = true;
-
-    if (typeof argv.input !== 'string') {
-      argv.input = 'a.wbn';
-    }
-
-    const dataArrayBuffer = fs.readFileSync(argv.input);
-    const bundle = new wbn.Bundle(dataArrayBuffer);
-    const j = getManifestJson(bundle);
-    if (j) {
-      const {name} = j;
-      const o = await uploadPackage(dataArrayBuffer, argv.input);
-      const {metadata, metadataHash} = o;
-      console.log('Name:', metadata.name);
-      console.log('Description:', metadata.description);
-      if (metadata.icons.length > 0) {
-        console.log('Icons:');
-        for (const o of metadata.icons) {
-          console.log(`  ${apiHost}/${o.hash} ${o.type}`);
-        }
-      }
-      console.log('Data:', `${apiHost}/${metadata.dataHash}.wbn`);
-      console.log('Metadata:', `${apiHost}/${metadataHash}.json`);
-
-      const u = packagesEndpoint + '/' + name;
-      const res = await fetch(u, {
-        method: 'PUT',
-        body: JSON.stringify(metadata),
-      });
-      if (res.ok) {
-        await res.json();
-        console.log(`https://xrpackage.org/inspect.html?p=${name}`);
-      } else {
-        console.warn('invalid status code: ' + res.status);
-      }
-    } else {
-      console.warn('no manifest.json in package');
-    }
-  })
+  .command(require('./commands/publish'))
   .command('unpublish [name]', 'unpublish a package from ipfs', yargs => {
     yargs
       .positional('name', {
