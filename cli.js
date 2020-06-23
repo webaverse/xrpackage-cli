@@ -17,7 +17,7 @@ const wbn = require('wbn');
 // const {BigNumber} = require('bignumber.js');
 const express = require('express');
 const open = require('open');
-const {makePromise, getManifestJson, screenshotApp, cloneBundle} = require('./utils');
+const {makePromise, getManifestJson, cloneBundle} = require('./utils');
 
 const {port, primaryUrl} = require('./constants');
 
@@ -354,20 +354,7 @@ yargs
   .command(require('./commands/install'))
   .command(require('./commands/init'))
   .command(require('./commands/build'))
-  .command('screenshot [input]', 'generate a screenshot of the package at [input]', yargs => {
-    yargs
-      .positional('input', {
-        describe: 'built package to screenshot (a.wbn)',
-      });
-  }, async argv => {
-    handled = true;
-
-    if (typeof argv.input !== 'string') {
-      argv.input = 'a.wbn';
-    }
-
-    await screenshotApp(argv.input);
-  })
+  .command(require('./commands/screenshot'))
   .command('volume [input]', 'generate a volume of the package at [input]', yargs => {
     yargs
       .positional('input', {
