@@ -33,30 +33,10 @@ try {
 
 yargs
   .scriptName('xrpk')
-  .command(require('./commands/whoami'))
-  .command(require('./commands/privatekey'))
-  .command(require('./commands/login'))
-  .command(require('./commands/wallet'))
-  .command(require('./commands/upload'))
-  .command(require('./commands/publish'))
-  .command(require('./commands/unpublish'))
-  .command(require('./commands/mint'))
-  .command(require('./commands/ls'))
-  .command(require('./commands/count'))
-  .command(require('./commands/run'))
-  .command(require('./commands/inspect'))
-  .command(require('./commands/install'))
-  .command(require('./commands/init'))
-  .command(require('./commands/build'))
-  .command(require('./commands/screenshot'))
-  .command(require('./commands/volume'))
-  .command(require('./commands/model'))
-  .command(require('./commands/bake'))
-  .command(require('./commands/view'))
-  .command(require('./commands/cat'))
-  .command(require('./commands/icon'))
-  .command(require('./commands/headers'))
-  .command(require('./commands/extract'))
+  .commandDir('./commands', {
+    recurse: false,
+    extensions: ['js'],
+  })
   .demandCommand()
   .recommendCommands()
   .argv;
