@@ -5,7 +5,6 @@ Error.stackTraceLimit = 300;
 
 const path = require('path');
 const fs = require('fs');
-const url = require('url');
 
 const mkdirp = require('mkdirp');
 const yargs = require('yargs');
@@ -62,38 +61,7 @@ yargs
   .command(require('./commands/view'))
   .command(require('./commands/cat'))
   .command(require('./commands/icon'))
-  .command('headers [input] [path]', 'print headers for file inside .wbn to stdout', yargs => {
-    yargs
-      .positional('input', {
-        describe: 'input .wbn file',
-        // default: 5000
-      })
-      .positional('path', {
-        describe: 'file path inside the .wbn to print headers for',
-        // default: 5000
-      });
-  }, async argv => {
-    handled = true;
-
-    if (argv.input) {
-      if (argv.path) {
-        const d = fs.readFileSync(argv.input);
-        const bundle = new wbn.Bundle(d);
-        const p = path.normalize(path.join('/', argv.path));
-        const u = bundle.urls.find(u => new url.URL(u).pathname === p);
-        if (u) {
-          const res = bundle.getResponse(u);
-          console.log(JSON.stringify(res.headers, null, 2));
-        } else {
-          throw `file not found: ${argv.path}`;
-        }
-      } else {
-        throw 'missing path';
-      }
-    } else {
-      throw 'missing input file';
-    }
-  })
+  .command(require('./commands/headers'))
   .command('extract [input]', 'extract contents of .wbn file', yargs => {
     yargs
       .positional('input', {
