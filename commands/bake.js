@@ -9,6 +9,19 @@ const open = require('open');
 const {makePromise, cloneBundle} = require('../utils');
 const {primaryUrl, port} = require('../constants');
 
+const _readIntoPromise = (type, p) => (req, res) => {
+  const bs = [];
+  req.on('data', d => {
+    bs.push(d);
+  });
+  req.once('end', () => {
+    const d = Buffer.concat(bs);
+    p.accept(d);
+    res.end();
+  });
+  req.once('error', p.reject);
+};
+
 const _bakeApp = async output => {
   const app = express();
   app.use((req, res, next) => {
@@ -17,45 +30,36 @@ const _bakeApp = async output => {
     res.set('Access-Control-Allow-Headers', '*');
     next();
   });
+
   app.get('/a.wbn', (req, res) => {
     fs.createReadStream(output).pipe(res);
   });
-  const _readIntoPromise = (type, p) => (req, res) => {
-    const bs = [];
-    req.on('data', d => {
-      bs.push(d);
-    });
-    req.once('end', () => {
-      const d = Buffer.concat(bs);
-      p.accept(d);
-      res.end();
-    });
-    req.once('error', p.reject);
-  };
+
   const gifPromise = makePromise();
   gifPromise.then(d => {
     console.warn(`got screenshot (${d.length} bytes)`);
     return d;
   });
   app.put('/screenshot.gif', _readIntoPromise('gif', gifPromise));
+
   const volumePromise = makePromise();
   volumePromise.then(d => {
     console.warn(`got volume (${d.length} bytes)`);
     return d;
   });
   app.put('/volume.glb', _readIntoPromise('glb', volumePromise));
+
   const aabbPromise = makePromise();
   aabbPromise.then(d => {
     console.warn(`got aabb (${d.length} bytes)`);
     return d;
   });
   app.put('/aabb.json', _readIntoPromise('json', aabbPromise));
+
   app.use(express.static(__dirname));
   const server = http.createServer(app);
   const connections = [];
-  server.on('connection', c => {
-    connections.push(c);
-  });
+  server.on('connection', c => connections.push(c));
   server.listen(port, () => {
     open(`https://xrpackage.org/bake.html?srcWbn%3Dhttp://localhost:${port}/a.wbn%26dstGif%3Dhttp://localhost:${port}/screenshot.gif%26dstVolume%3Dhttp://localhost:${port}/volume.glb%26dstAabb%3Dhttp://localhost:${port}/aabb.json`);
   });
@@ -93,6 +97,7 @@ const _bakeApp = async output => {
     }
     gifIcon.src = 'xrpackage_icon.gif';
   }
+
   if (volumeUint8Array.length > 0) {
     builder.addExchange(primaryUrl + '/xrpackage_volume.glb', 200, {
       'Content-Type': 'model/gltf-binary+preview',
@@ -108,6 +113,7 @@ const _bakeApp = async output => {
     }
     volumeIcon.src = 'xrpackage_volume.glb';
   }
+
   if (aabbUint8Array.length > 0) {
     const aabb = JSON.parse(aabbUint8Array.toString('utf8'));
     let xrDetails = manifestJson.xr_details;
@@ -122,8 +128,7 @@ const _bakeApp = async output => {
     let modelPath;
     switch (manifestJson.xr_type) {
       case 'gltf@0.0.1':
-      case 'vrm@0.0.1':
-      {
+      case 'vrm@0.0.1': {
         /* const res = bundle.getResponse(primaryUrl + '/' + startUrl);
         return res.body; */
         modelPath = manifestJson.start_url;
