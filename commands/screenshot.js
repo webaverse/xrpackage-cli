@@ -11,5 +11,5 @@ module.exports = {
         default: 'a.wbn',
       });
   },
-  handler: async (argv) => await screenshotApp(argv.input),
+  handler: async argv => await screenshotApp(argv.input),
 };

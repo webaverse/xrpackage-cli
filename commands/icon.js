@@ -16,7 +16,7 @@ module.exports = {
         default: 'a.wbn',
       });
   },
-  handler: async (argv) => {
+  handler: async argv => {
     const dataArrayBuffer = fs.readFileSync(argv.input);
     const bundle = new wbn.Bundle(dataArrayBuffer);
     const manifest = getManifestJson(bundle);

@@ -13,7 +13,7 @@ module.exports = {
         describe: '.wbn file to extract',
       });
   },
-  handler: async (argv) => {
+  handler: async argv => {
     if (argv.input) {
       const d = fs.readFileSync(argv.input);
       const bundle = new wbn.Bundle(d);

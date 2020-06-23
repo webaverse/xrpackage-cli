@@ -71,7 +71,7 @@ module.exports = {
         description: 'Screenshot package after building',
       });
   },
-  handler: async (argv) => {
+  handler: async argv => {
     let fileInput, startUrl, xrType, xrDetails, mimeType, name, description, directory;
     const _detectType = input => {
       const type = xrTypes.find(type => type.regex.test(input));

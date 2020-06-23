@@ -16,7 +16,7 @@ module.exports = {
         describe: 'file path inside the .wbn to cat',
       });
   },
-  handler: async (argv) => {
+  handler: async argv => {
     if (argv.input) {
       if (argv.path) {
         const d = fs.readFileSync(argv.input);

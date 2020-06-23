@@ -118,5 +118,5 @@ module.exports = {
         default: 'a.wbn',
       });
   },
-  handler: async (argv) => await _volumeApp(argv.input),
+  handler: async argv => await _volumeApp(argv.input),
 };

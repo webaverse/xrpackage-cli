@@ -171,7 +171,7 @@ module.exports = {
         default: 'a.wbn',
       });
   },
-  handler: async (argv) => {
+  handler: async argv => {
     await _bakeApp(argv.input);
   },
 };
