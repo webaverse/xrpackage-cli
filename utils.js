@@ -266,4 +266,6 @@ module.exports = {
   getManifestJson,
   uploadPackage,
   getContract,
+
+  web3,
 };
