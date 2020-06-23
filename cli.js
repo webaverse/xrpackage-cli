@@ -464,19 +464,7 @@ yargs
   .command(require('./commands/unpublish'))
   .command(require('./commands/mint'))
   .command(require('./commands/ls'))
-  .command('count', 'get count of minted packages', yargs => {
-    /* yargs
-      .positional('id', {
-        describe: 'id of package to install',
-        // default: 5000
-      }) */
-  }, async argv => {
-    handled = true;
-
-    const contract = await getContract;
-    const nonce = await contract.methods.getNonce().call();
-    console.log(nonce);
-  })
+  .command(require('./commends/count'))
   .command('run [id]', 'run a package in browser', yargs => {
     yargs
       .option('path', {
