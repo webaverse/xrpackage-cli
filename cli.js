@@ -569,23 +569,7 @@ let handled = false;
 yargs
   .scriptName('xrpk')
   .command(require('./commands/whoami'))
-  .command('privatekey', 'export private key menmonic', yargs => {
-    /* yargs
-      .positional('input', {
-        describe: 'input file to build',
-        // default: 5000
-      }) */
-  }, async argv => {
-    handled = true;
-
-    const ks = await getKs();
-    if (ks) {
-      const seed = await ks.exportSeed();
-      console.log(seed);
-    } else {
-      printNotLoggedIn();
-    }
-  })
+  .command(require('./commands/privatekey'))
   .command('login', 'log in to web registry', yargs => {
     /* yargs
       .positional('input', {
