@@ -8,6 +8,17 @@ const lightwallet = require('./eth-lightwallet');
 
 const hdPathString = 'm/44\'/60\'/0\'/0';
 
+function makePromise() {
+  let accept, reject;
+  const p = new Promise((a, r) => {
+    accept = a;
+    reject = r;
+  });
+  p.accept = accept;
+  p.reject = reject;
+  return p;
+}
+
 const createKeystore = async (seedPhrase, password) => {
   const p = makePromise();
   lightwallet.keystore.createVault({
@@ -39,15 +50,33 @@ const createKeystore = async (seedPhrase, password) => {
   return ks;
 };
 
-function makePromise() {
-  let accept, reject;
-  const p = new Promise((a, r) => {
-    accept = a;
-    reject = r;
-  });
-  p.accept = accept;
-  p.reject = reject;
-  return p;
+async function getKs() {
+  const ksString = (() => {
+    try {
+      return fs.readFileSync(path.join(os.homedir(), '.xrpackage-wallet'));
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        return null;
+      } else {
+        throw err;
+      }
+    }
+  })();
+  if (ksString) {
+    const passwordPromise = makePromise();
+    read({prompt: 'password: ', silent: true}, function(er, password) {
+      if (!er) {
+        passwordPromise.accept(password);
+      } else {
+        passwordPromise.reject(er);
+      }
+    });
+    const password = await passwordPromise;
+    const ks = await _importKeyStore(ksString, password);
+    return ks;
+  } else {
+    return null;
+  }
 }
 
 async function _exportSeed(ks, password) {
@@ -113,37 +142,8 @@ const _importKeyStore = async (s, password) => {
   return ks;
 };
 
-async function getKs() {
-  const ksString = (() => {
-    try {
-      return fs.readFileSync(path.join(os.homedir(), '.xrpackage-wallet'));
-    } catch (err) {
-      if (err.code === 'ENOENT') {
-        return null;
-      } else {
-        throw err;
-      }
-    }
-  })();
-  if (ksString) {
-    const passwordPromise = makePromise();
-    read({prompt: 'password: ', silent: true}, function(er, password) {
-      if (!er) {
-        passwordPromise.accept(password);
-      } else {
-        passwordPromise.reject(er);
-      }
-    });
-    const password = await passwordPromise;
-    const ks = await _importKeyStore(ksString, password);
-    return ks;
-  } else {
-    return null;
-  }
-}
-
 module.exports = {
   makePromise,
-  getKs,
   createKeystore,
+  getKs,
 };
