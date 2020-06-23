@@ -60,36 +60,7 @@ yargs
   .command(require('./commands/volume'))
   .command(require('./commands/model'))
   .command(require('./commands/bake'))
-  .command('view [input]', 'view contents of input .wbn file', yargs => {
-    yargs
-      .positional('input', {
-        describe: 'input .wbn file to view',
-        // default: 5000
-      })
-      .option('types', {
-        alias: 't',
-        type: 'boolean',
-        description: 'Show file types as well',
-      });
-  }, async argv => {
-    handled = true;
-
-    if (argv.input) {
-      const d = fs.readFileSync(argv.input);
-      const bundle = new wbn.Bundle(d);
-      for (const url of bundle.urls) {
-        const res = bundle.getResponse(url);
-        let s = url;
-        if (argv.types) {
-          s += ' ';
-          s += res.headers['content-type'] || 'unknown';
-        }
-        console.log(s);
-      }
-    } else {
-      console.warn('missing input file');
-    }
-  })
+  .command(require('./commands/view'))
   .command('cat [input] [path]', 'cat contents of file inside .wbn to stdout', yargs => {
     yargs
       .positional('input', {
