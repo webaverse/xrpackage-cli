@@ -568,22 +568,7 @@ const _bakeApp = async output => {
 let handled = false;
 yargs
   .scriptName('xrpk')
-  .command('whoami', 'print logged in address', yargs => {
-    /* yargs
-      .positional('input', {
-        describe: 'input file to build',
-        // default: 5000
-      }) */
-  }, async argv => {
-    handled = true;
-
-    const ks = await getKs();
-    if (ks) {
-      console.log(`0x${ks.addresses[0]}`);
-    } else {
-      printNotLoggedIn();
-    }
-  })
+  .command(require('./commands/whoami'))
   .command('privatekey', 'export private key menmonic', yargs => {
     /* yargs
       .positional('input', {
