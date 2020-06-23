@@ -31,7 +31,6 @@ try {
   console.warn(err);
 } */
 
-const handled = false;
 yargs
   .scriptName('xrpk')
   .command(require('./commands/whoami'))
@@ -58,11 +57,9 @@ yargs
   .command(require('./commands/icon'))
   .command(require('./commands/headers'))
   .command(require('./commands/extract'))
-  .showHelpOnFail(false)
+  .demandCommand()
+  .recommendCommands()
   .argv;
-if (!handled) {
-  yargs.showHelp();
-}
 /* .option('verbose', {
     alias: 'v',
     type: 'boolean',
