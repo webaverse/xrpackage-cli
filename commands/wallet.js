@@ -10,6 +10,7 @@ const lightwallet = require('../eth-lightwallet');
 const {makePromise, createKeystore} = require('../utils');
 
 const _exportKeyStore = ks => ks.serialize();
+
 module.exports = {
   command: 'wallet',
   describe: 'set up blockchain wallet',

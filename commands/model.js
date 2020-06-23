@@ -23,8 +23,7 @@ const _modelApp = async output => {
     let modelPath;
     switch (xrType) {
       case 'gltf@0.0.1':
-      case 'vrm@0.0.1':
-      {
+      case 'vrm@0.0.1': {
         /* const res = bundle.getResponse(primaryUrl + '/' + startUrl);
         return res.body; */
         modelPath = startUrl;
@@ -45,6 +44,7 @@ const _modelApp = async output => {
       src: modelPath,
       type: 'model/gltf-binary',
     };
+
     if (!Array.isArray(manifestJson.icons)) {
       manifestJson.icons = [];
     }

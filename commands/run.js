@@ -6,6 +6,27 @@ const open = require('open');
 
 const {port} = require('../constants');
 
+const _getRunUrl = o => {
+  let url;
+  let servePath;
+  if (o.path) {
+    url = `http://localhost:${port}/run.html`;
+    servePath = o.path;
+  } else {
+    url = 'https://xrpackage.org/run.html';
+    servePath = null;
+  }
+  if (o.id) {
+    url += `?i=${o.id}`;
+  } else if (o.url) {
+    url += `?u=${o.url}`;
+  }
+  return {
+    url,
+    servePath,
+  };
+};
+
 module.exports = {
   command: 'run [id]',
   describe: 'run a package in browser',
@@ -25,27 +46,6 @@ module.exports = {
       res.set('Access-Control-Allow-Headers', '*');
       next();
     });
-
-    const _getRunUrl = o => {
-      let url;
-      let servePath;
-      if (o.path) {
-        url = `http://localhost:${port}/run.html`;
-        servePath = o.path;
-      } else {
-        url = 'https://xrpackage.org/run.html';
-        servePath = null;
-      }
-      if (o.id) {
-        url += `?i=${o.id}`;
-      } else if (o.url) {
-        url += `?u=${o.url}`;
-      }
-      return {
-        url,
-        servePath,
-      };
-    };
 
     let runSpec;
     if (!isNaN(parseInt(argv.id, 10))) {

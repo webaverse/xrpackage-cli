@@ -10,7 +10,6 @@ module.exports = {
     yargs
       .positional('input', {
         describe: '.wbn package to upload',
-        // default: 5000
       });
   },
   handler: async argv => {

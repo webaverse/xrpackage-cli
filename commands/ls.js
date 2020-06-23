@@ -7,7 +7,7 @@ module.exports = {
   command: 'ls',
   describe: 'list wallet inventory',
   builder: {},
-  handler: async argv => {
+  handler: async () => {
     const ks = await getKs();
     if (ks) {
       const contract = await getContract;

@@ -8,6 +8,19 @@ const wbn = require('wbn');
 const {makePromise, port} = require('../utils');
 const {primaryUrl, cloneBundle} = require('../constants');
 
+const _readIntoPromise = (type, p) => (req, res) => {
+  const bs = [];
+  req.on('data', d => {
+    bs.push(d);
+  });
+  req.once('end', () => {
+    const d = Buffer.concat(bs);
+    p.accept(d);
+    res.end();
+  });
+  req.once('error', p.reject);
+};
+
 const _volumeApp = async output => {
   const app = express();
   app.use((req, res, next) => {
@@ -19,36 +32,26 @@ const _volumeApp = async output => {
   app.get('/a.wbn', (req, res) => {
     fs.createReadStream(output).pipe(res);
   });
-  const _readIntoPromise = (type, p) => (req, res) => {
-    const bs = [];
-    req.on('data', d => {
-      bs.push(d);
-    });
-    req.once('end', () => {
-      const d = Buffer.concat(bs);
-      p.accept(d);
-      res.end();
-    });
-    req.once('error', p.reject);
-  };
+
   const volumePromise = makePromise();
   volumePromise.then(d => {
     console.warn(`got volume (${d.length} bytes)`);
     return d;
   });
   app.put('/volume.glb', _readIntoPromise('glb', volumePromise));
+
   const aabbPromise = makePromise();
   aabbPromise.then(d => {
     console.warn(`got aabb (${d.length} bytes)`);
     return d;
   });
   app.put('/aabb.json', _readIntoPromise('json', aabbPromise));
+
   app.use(express.static(__dirname));
   const server = http.createServer(app);
+
   const connections = [];
-  server.on('connection', c => {
-    connections.push(c);
-  });
+  server.on('connection', c => connections.push(c));
   server.listen(port, () => {
     open(`https://xrpackage.org/volume.html?srcWbn%3Dhttp://localhost:${port}/a.wbn%26dstVolume%3Dhttp://localhost:${port}/volume.glb%26dstAabb%3Dhttp://localhost:${port}/aabb.json`);
   });
@@ -86,6 +89,7 @@ const _volumeApp = async output => {
     }
     volumeIcon.src = 'xrpackage_volume.glb';
   }
+
   if (aabbUint8Array.length > 0) {
     const aabb = JSON.parse(aabbUint8Array.toString('utf8'));
     let xrDetails = manifestJson.xr_details;

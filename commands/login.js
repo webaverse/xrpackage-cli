@@ -7,8 +7,8 @@ const mkdirp = require('mkdirp');
 const fetch = require('node-fetch');
 
 const {makePromise} = require('../utils');
-
 const loginEndpoint = 'https://login.exokit.org';
+
 module.exports = {
   command: 'login',
   describe: 'log in to web registry',
