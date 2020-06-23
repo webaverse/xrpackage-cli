@@ -29,6 +29,7 @@ const {
   makePromise,
   getKs,
   createKeystore,
+  printNotLoggedIn,
 } = require('./utils');
 
 const apiHost = 'https://ipfs.exokit.org/ipfs';
@@ -78,9 +79,6 @@ const _isValidPackageName = name => packageNameRegex.test(name);
 const _removeUrlTail = u => u.replace(/(?:\?|#).*$/, '');
 const _exportKeyStore = ks => ks.serialize();
 
-const _printNotLoggedIn = () => {
-  console.warn('not logged in; use xrpk login');
-};
 const _cloneBundle = (bundle, options = {}) => {
   const except = options.except || [];
   const urlSpec = new url.URL(bundle.primaryURL);
@@ -583,7 +581,7 @@ yargs
     if (ks) {
       console.log(`0x${ks.addresses[0]}`);
     } else {
-      _printNotLoggedIn();
+      printNotLoggedIn();
     }
   })
   .command('privatekey', 'export private key menmonic', yargs => {
@@ -600,7 +598,7 @@ yargs
       const seed = await ks.exportSeed();
       console.log(seed);
     } else {
-      _printNotLoggedIn();
+      printNotLoggedIn();
     }
   })
   .command('login', 'log in to web registry', yargs => {
@@ -926,7 +924,7 @@ yargs
         console.warn('no manifest.json in package');
       }
     } else {
-      _printNotLoggedIn();
+      printNotLoggedIn();
     }
   })
   .command('ls', 'list wallet inventory', yargs => {
@@ -977,7 +975,7 @@ yargs
       /* const nonce = await contract.methods.getNonce().call();
       console.log(nonce); */
     } else {
-      _printNotLoggedIn();
+      printNotLoggedIn();
     }
   })
   .command('count', 'get count of minted packages', yargs => {

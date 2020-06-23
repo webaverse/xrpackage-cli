@@ -79,6 +79,8 @@ async function getKs() {
   }
 }
 
+const printNotLoggedIn = () => console.warn('not logged in; use xrpk login');
+
 async function _exportSeed(ks, password) {
   const p = makePromise();
   ks.keyFromPassword(password, function(err, pwDerivedKey) {
@@ -146,4 +148,5 @@ module.exports = {
   makePromise,
   createKeystore,
   getKs,
+  printNotLoggedIn,
 };
