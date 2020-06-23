@@ -18,7 +18,6 @@ const wbn = require('wbn');
   Tx: require('ethereumjs-tx').Transaction,
 }; */
 // const {BigNumber} = require('bignumber.js');
-const Web3 = require('./web3');
 const express = require('express');
 const open = require('open');
 const {
@@ -26,6 +25,7 @@ const {
   getKs,
   printNotLoggedIn,
   getManifestJson,
+  getContract,
 } = require('./utils');
 
 const {
@@ -33,19 +33,8 @@ const {
   packagesEndpoint,
   tokenHost,
   network,
-  rpcUrl,
   port,
 } = require('./constants');
-
-const web3 = new Web3(new Web3.providers.HttpProvider(rpcUrl));
-
-const getContract = Promise.all([
-  fetch('https://contracts.webaverse.com/address.js').then(res => res.text()).then(s => s.replace(/^export default `(.+?)`[\s\S]*$/, '$1')),
-  fetch('https://contracts.webaverse.com/abi.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^export default /, ''))),
-]).then(([address, abi]) => {
-  // console.log('got address + abi', {address, abi});
-  return new web3.eth.Contract(abi, address);
-});
 
 const primaryUrl = 'https://xrpackage.org';
 

@@ -6,8 +6,12 @@ const read = require('read');
 const fetch = require('node-fetch');
 const wbn = require('wbn');
 
+const Web3 = require('./web3');
 const lightwallet = require('./eth-lightwallet');
 const {apiHost} = require('../constants');
+
+const {rpcUrl} = require('./constants');
+const web3 = new Web3(new Web3.providers.HttpProvider(rpcUrl));
 
 const hdPathString = 'm/44\'/60\'/0\'/0';
 const packageNameRegex = /^[a-z0-9][a-z0-9-._~]*$/;
@@ -160,6 +164,14 @@ const uploadPackage = async (dataArrayBuffer, xrpkName) => {
   }
 };
 
+const getContract = Promise.all([
+  fetch('https://contracts.webaverse.com/address.js').then(res => res.text()).then(s => s.replace(/^export default `(.+?)`[\s\S]*$/, '$1')),
+  fetch('https://contracts.webaverse.com/abi.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^export default /, ''))),
+]).then(([address, abi]) => {
+  // console.log('got address + abi', {address, abi});
+  return new web3.eth.Contract(abi, address);
+});
+
 const printNotLoggedIn = () => console.warn('not logged in; use xrpk login');
 
 async function _exportSeed(ks, password) {
@@ -253,4 +265,5 @@ module.exports = {
   printNotLoggedIn,
   getManifestJson,
   uploadPackage,
+  getContract,
 };
