@@ -21,9 +21,7 @@ const express = require('express');
 const open = require('open');
 const {makePromise, getManifestJson} = require('./utils');
 
-const {port} = require('./constants');
-
-const primaryUrl = 'https://xrpackage.org';
+const {port, primaryUrl} = require('./constants');
 
 /* loadPromise.then(c => {
   const m = c.methods.mint([1, 1, 1], '0x0', 'hash', 'lol');
