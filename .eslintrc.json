@@ -10,7 +10,8 @@
             "asyncArrow": "always"
         }],
         "no-throw-literal": "off",
-        "promise/param-names": "off"
+        "promise/param-names": "off",
+        "arrow-parens": ["error", "as-needed"]
     },
     "env": {
         "node": true
