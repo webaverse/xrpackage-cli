@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-unused-expressions */
 
 Error.stackTraceLimit = 300;
 
@@ -14,7 +15,7 @@ const mkdirp = require('mkdirp');
 const yargs = require('yargs');
 const fetch = require('node-fetch');
 const mime = require('mime');
-const ignoreWalk = require('ignore-walk')
+const ignoreWalk = require('ignore-walk');
 const wbn = require('wbn');
 /* const ethereumjs = {
   Tx: require('ethereumjs-tx').Transaction,
@@ -25,9 +26,9 @@ const Web3 = require('./web3');
 const express = require('express');
 const open = require('open');
 
-const apiHost = `https://ipfs.exokit.org/ipfs`;
-const packagesEndpoint = 'https://packages.exokit.org'
-const tokenHost = `https://tokens.webaverse.com`;
+const apiHost = 'https://ipfs.exokit.org/ipfs';
+const packagesEndpoint = 'https://packages.exokit.org';
+const tokenHost = 'https://tokens.webaverse.com';
 const network = 'rinkeby';
 const infuraApiKey = '4fb939301ec543a0969f3019d74f80c2';
 const rpcUrl = `https://${network}.infura.io/v3/${infuraApiKey}`;
@@ -35,8 +36,8 @@ const web3 = new Web3(new Web3.providers.HttpProvider(rpcUrl));
 const port = 9999;
 
 const getContract = Promise.all([
-  fetch(`https://contracts.webaverse.com/address.js`).then(res => res.text()).then(s => s.replace(/^export default `(.+?)`[\s\S]*$/, '$1')),
-  fetch(`https://contracts.webaverse.com/abi.js`).then(res => res.text()).then(s => JSON.parse(s.replace(/^export default /, ''))),
+  fetch('https://contracts.webaverse.com/address.js').then(res => res.text()).then(s => s.replace(/^export default `(.+?)`[\s\S]*$/, '$1')),
+  fetch('https://contracts.webaverse.com/abi.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^export default /, ''))),
 ]).then(([address, abi]) => {
   // console.log('got address + abi', {address, abi});
   return new web3.eth.Contract(abi, address);
@@ -79,12 +80,12 @@ function makePromise() {
 }
 const packageNameRegex = /^[a-z0-9][a-z0-9-._~]*$/;
 const _isValidPackageName = name => packageNameRegex.test(name);
-const _removeUrlTail = u => u.replace(/(?:\?|\#).*$/, '');
+const _removeUrlTail = u => u.replace(/(?:\?|#).*$/, '');
 async function getKs() {
   const ksString = (() => {
     try {
       return fs.readFileSync(path.join(os.homedir(), '.xrpackage-wallet'));
-    } catch(err) {
+    } catch (err) {
       if (err.code === 'ENOENT') {
         return null;
       } else {
@@ -94,7 +95,7 @@ async function getKs() {
   })();
   if (ksString) {
     const passwordPromise = makePromise();
-    read({ prompt: 'password: ', silent: true }, function(er, password) {
+    read({prompt: 'password: ', silent: true}, function(er, password) {
       if (!er) {
         passwordPromise.accept(password);
       } else {
@@ -108,10 +109,10 @@ async function getKs() {
     return null;
   }
 }
-const hdPathString = `m/44'/60'/0'/0`;
+const hdPathString = 'm/44\'/60\'/0\'/0';
 async function exportSeed(ks, password) {
   const p = makePromise();
-  ks.keyFromPassword(password, function (err, pwDerivedKey) {
+  ks.keyFromPassword(password, function(err, pwDerivedKey) {
     if (!err) {
       const seed = ks.getSeed(pwDerivedKey);
       p.accept(seed);
@@ -123,7 +124,7 @@ async function exportSeed(ks, password) {
 }
 async function signTx(ks, password, rawTx) {
   const p = makePromise();
-  ks.keyFromPassword(password, function (err, pwDerivedKey) {
+  ks.keyFromPassword(password, function(err, pwDerivedKey) {
     if (!err) {
       const address = ks.addresses[0];
       console.log('sign tx', ks, pwDerivedKey, rawTx, address, hdPathString);
@@ -137,7 +138,7 @@ async function signTx(ks, password, rawTx) {
 }
 async function getPrivateKey(ks, password) {
   const p = makePromise();
-  ks.keyFromPassword(password, function (err, pwDerivedKey) {
+  ks.keyFromPassword(password, function(err, pwDerivedKey) {
     if (!err) {
       const privateKey = ks.exportPrivateKey(ks.addresses[0], pwDerivedKey);
       p.accept(privateKey);
@@ -153,12 +154,12 @@ const _createKeystore = async (seedPhrase, password) => {
     password,
     seedPhrase, // Optionally provide a 12-word seed phrase
     // salt: fixture.salt,     // Optionally provide a salt.
-                               // A unique salt will be generated otherwise.
-    hdPathString,    // Optional custom HD Path String
+    // A unique salt will be generated otherwise.
+    hdPathString, // Optional custom HD Path String
   },
   (err, ks) => {
     if (!err) {
-      ks.keyFromPassword(password, function (err, pwDerivedKey) {
+      ks.keyFromPassword(password, function(err, pwDerivedKey) {
         if (!err) {
           ks.generateNewAddress(pwDerivedKey, 1);
 
@@ -182,7 +183,7 @@ const _importKeyStore = async (s, password) => {
   const ks = lightwallet.keystore.deserialize(s);
 
   const p = makePromise();
-  ks.keyFromPassword(password, function (err, pwDerivedKey) {
+  ks.keyFromPassword(password, function(err, pwDerivedKey) {
     if (!err) {
       if (ks.isDerivedKeyCorrect(pwDerivedKey)) {
         p.accept();
@@ -248,7 +249,7 @@ const _isBaked = bundle => {
     return false;
   }
 };
-const _uploadPackage = async dataArrayBuffer => {
+const _uploadPackage = async (dataArrayBuffer, xrpkName) => {
   const bundle = new wbn.Bundle(dataArrayBuffer);
   const j = _getManifestJson(bundle);
   if (j) {
@@ -260,7 +261,7 @@ const _uploadPackage = async dataArrayBuffer => {
         for (let i = 0; i < icons.length; i++) {
           const icon = icons[i];
           const {src, type} = icon;
-          console.warn(`uploading icon "${type}" (${i+1}/${icons.length})...`);
+          console.warn(`uploading icon "${type}" (${i + 1}/${icons.length})...`);
           const response = bundle.getResponse(`https://xrpackage.org/${src}`);
           const hash = await fetch(`${apiHost}/`, {
             method: 'PUT',
@@ -274,8 +275,8 @@ const _uploadPackage = async dataArrayBuffer => {
           });
         }
 
-        const objectName = typeof name === 'string' ? name : path.basename(argv.input);
-        const objectDescription = typeof description === 'string' ? description : `Package for ${path.basename(argv.input)}`;
+        const objectName = typeof name === 'string' ? name : path.basename(xrpkName);
+        const objectDescription = typeof description === 'string' ? description : `Package for ${path.basename(xrpkName)}`;
 
         console.warn('uploading data...');
         const dataHash = await fetch(`${apiHost}/`, {
@@ -366,7 +367,6 @@ const _screenshotApp = async output => {
   const res = bundle.getResponse('https://xrpackage.org/manifest.json');
   const s = res.body.toString('utf8');
   const manifestJson = JSON.parse(s);
-  const {start_url: startUrl} = manifestJson;
 
   const builder = _cloneBundle(bundle, {
     except: ['/manifest.json'],
@@ -377,7 +377,7 @@ const _screenshotApp = async output => {
     builder.addExchange(primaryUrl + '/xrpackage_icon.gif', 200, {
       'Content-Type': 'image/gif',
     }, gifUint8Array);
-    
+
     let gifIcon = manifestJson.icons.find(icon => icon.type === 'image/gif');
     if (!gifIcon) {
       gifIcon = {
@@ -463,7 +463,7 @@ const _volumeApp = async output => {
     builder.addExchange(primaryUrl + '/xrpackage_volume.glb', 200, {
       'Content-Type': 'model/gltf-binary+preview',
     }, volumeUint8Array);
-    
+
     let volumeIcon = manifestJson.icons.find(icon => icon.type === 'model/gltf-binary+preview');
     if (!volumeIcon) {
       volumeIcon = {
@@ -616,7 +616,7 @@ const _bakeApp = async output => {
     builder.addExchange(primaryUrl + '/xrpackage_icon.gif', 200, {
       'Content-Type': 'image/gif',
     }, gifUint8Array);
-    
+
     let gifIcon = manifestJson.icons.find(icon => icon.type === 'image/gif');
     if (!gifIcon) {
       gifIcon = {
@@ -631,7 +631,7 @@ const _bakeApp = async output => {
     builder.addExchange(primaryUrl + '/xrpackage_volume.glb', 200, {
       'Content-Type': 'model/gltf-binary+preview',
     }, volumeUint8Array);
-    
+
     let volumeIcon = manifestJson.icons.find(icon => icon.type === 'model/gltf-binary+preview');
     if (!volumeIcon) {
       volumeIcon = {
@@ -693,8 +693,8 @@ let handled = false;
 yargs
   .scriptName('xrpk')
   .command('whoami', 'print logged in address', yargs => {
-    yargs
-      /* .positional('input', {
+    /* yargs
+      .positional('input', {
         describe: 'input file to build',
         // default: 5000
       }) */
@@ -709,8 +709,8 @@ yargs
     }
   })
   .command('privatekey', 'export private key menmonic', yargs => {
-    yargs
-      /* .positional('input', {
+    /* yargs
+      .positional('input', {
         describe: 'input file to build',
         // default: 5000
       }) */
@@ -726,8 +726,8 @@ yargs
     }
   })
   .command('login', 'log in to web registry', yargs => {
-    yargs
-      /* .positional('input', {
+    /* yargs
+      .positional('input', {
         describe: 'input file to build',
         // default: 5000
       }) */
@@ -735,7 +735,7 @@ yargs
     handled = true;
 
     const p = makePromise();
-    read({ prompt: 'email: ' }, function(er, seedPhrase) {
+    read({prompt: 'email: '}, function(er, seedPhrase) {
       if (!er) {
         p.accept(seedPhrase);
       } else {
@@ -751,7 +751,7 @@ yargs
       await res.json();
 
       const p2 = makePromise();
-      read({ prompt: 'login code (check your email!): ' }, function(er, code) {
+      read({prompt: 'login code (check your email!): '}, function(er, code) {
         if (!er) {
           p2.accept(code);
         } else {
@@ -782,12 +782,12 @@ yargs
         console.warn(`invalid status code: ${res2.status}`);
       }
     } else {
-      console.warn(`invalid status code: ${res2.status}`);
+      console.warn(`invalid status code: ${res.status}`);
     }
   })
   .command('wallet', 'set up blockchain wallet', yargs => {
-    yargs
-      /* .positional('input', {
+    /* yargs
+      .positional('input', {
         describe: 'input file to build',
         // default: 5000
       }) */
@@ -796,15 +796,14 @@ yargs
 
     const mutableStdout = new Writable({
       write: function(chunk, encoding, callback) {
-        if (!this.muted)
-          process.stdout.write(chunk, encoding);
+        if (!this.muted) { process.stdout.write(chunk, encoding); }
         callback();
-      }
+      },
     });
     mutableStdout.muted = false;
 
     const p = makePromise();
-    read({ prompt: 'seed phrase (BIP39 format, default: auto): ', silent: true }, function(er, seedPhrase) {
+    read({prompt: 'seed phrase (BIP39 format, default: auto): ', silent: true}, function(er, seedPhrase) {
       if (!er) {
         p.accept(seedPhrase);
       } else {
@@ -823,7 +822,7 @@ yargs
     }
 
     const p2 = makePromise();
-    read({ prompt: 'password (used to encrypt seed phrase): ', silent: true }, function(er, password) {
+    read({prompt: 'password (used to encrypt seed phrase): ', silent: true}, function(er, password) {
       if (!er) {
         p2.accept(password);
       } else {
@@ -854,7 +853,7 @@ yargs
       .positional('input', {
         describe: '.wbn package to upload',
         // default: 5000
-      })
+      });
   }, async argv => {
     handled = true;
 
@@ -862,8 +861,8 @@ yargs
       argv.input = 'a.wbn';
     }
 
-    const dataArrayBuffer = fs.readFileSync(input);
-    const o = await _uploadPackage(dataArrayBuffer);
+    const dataArrayBuffer = fs.readFileSync(argv.input);
+    const o = await _uploadPackage(dataArrayBuffer, argv.input);
     const {metadata, metadataHash} = o;
     console.log('Name:', metadata.name);
     console.log('Description:', metadata.description);
@@ -881,7 +880,7 @@ yargs
       .positional('input', {
         describe: '.wbn package to publish',
         // default: 5000
-      })
+      });
   }, async argv => {
     handled = true;
 
@@ -894,7 +893,7 @@ yargs
     const j = _getManifestJson(bundle);
     if (j) {
       const {name} = j;
-      const o = await _uploadPackage(dataArrayBuffer);
+      const o = await _uploadPackage(dataArrayBuffer, argv.input);
       const {metadata, metadataHash} = o;
       console.log('Name:', metadata.name);
       console.log('Description:', metadata.description);
@@ -927,7 +926,7 @@ yargs
       .positional('name', {
         describe: 'package name to unpublish',
         // default: 5000
-      })
+      });
   }, async argv => {
     handled = true;
 
@@ -952,7 +951,7 @@ yargs
       .positional('input', {
         describe: '.wbn package to mint',
         // default: 5000
-      })
+      });
   }, async argv => {
     handled = true;
 
@@ -1030,7 +1029,7 @@ yargs
         web3.eth.accounts.wallet.add(account);
 
         const nonce = await web3.eth.getTransactionCount(address);
-        const gasPrice = await web3.eth.getGasPrice();
+        // const gasPrice = await web3.eth.getGasPrice();
         // const value = '10000000000000000'; // 0.01 ETH
 
         const m = contract.methods.mint(1, 'hash', metadataHash);
@@ -1053,8 +1052,8 @@ yargs
     }
   })
   .command('ls', 'list wallet inventory', yargs => {
-    yargs
-      /* .positional('id', {
+    /* yargs
+      .positional('id', {
         describe: 'id of package to install',
         // default: 5000
       }) */
@@ -1069,7 +1068,7 @@ yargs
       const ids = Array(owners.length);
       for (let i = 0; i < ids.length; i++) {
         owners[i] = owner;
-        ids[i] = i+1;
+        ids[i] = i + 1;
       }
       const balances = await contract.methods.balanceOfBatch(owners, ids).call();
       const ownedIds = balances.map((balance, id) => {
@@ -1104,8 +1103,8 @@ yargs
     }
   })
   .command('count', 'get count of minted packages', yargs => {
-    yargs
-      /* .positional('id', {
+    /* yargs
+      .positional('id', {
         describe: 'id of package to install',
         // default: 5000
       }) */
@@ -1121,8 +1120,8 @@ yargs
       .option('path', {
         alias: 'p',
         type: 'string',
-        description: 'Use local xrpackage path for runtime'
-      })
+        description: 'Use local xrpackage path for runtime',
+      });
   }, async argv => {
     handled = true;
 
@@ -1141,7 +1140,7 @@ yargs
         url = `http://localhost:${port}/run.html`;
         servePath = o.path;
       } else {
-        url = `https://xrpackage.org/run.html`;
+        url = 'https://xrpackage.org/run.html';
         servePath = null;
       }
       if (o.id) {
@@ -1190,8 +1189,8 @@ yargs
       .option('path', {
         alias: 'p',
         type: 'string',
-        description: 'Use local xrpackage path for runtime'
-      })
+        description: 'Use local xrpackage path for runtime',
+      });
   }, async argv => {
     handled = true;
 
@@ -1210,7 +1209,7 @@ yargs
         url = `http://localhost:${port}/inspect.html`;
         servePath = o.path;
       } else {
-        url = `https://xrpackage.org/inspect.html`;
+        url = 'https://xrpackage.org/inspect.html';
         servePath = null;
       }
       if (o.id) {
@@ -1259,7 +1258,7 @@ yargs
       .positional('id', {
         describe: 'id of package to install',
         // default: 5000
-      })
+      });
   }, async argv => {
     handled = true;
 
@@ -1309,8 +1308,8 @@ yargs
       console.warn('manifest.json already exists; doing nothing');
     } else {
       fs.writeFileSync('manifest.json', JSON.stringify({
-        name: "My WebXR App",
-        description: "Describe your WebXR application",
+        name: 'My WebXR App',
+        description: 'Describe your WebXR application',
         xr_type: 'webxr-site@0.0.1',
         start_url: 'index.html',
       }, null, 2));
@@ -1330,7 +1329,7 @@ yargs
       .option('screenshot', {
         alias: 's',
         type: 'boolean',
-        description: 'Screenshot package after building'
+        description: 'Screenshot package after building',
       });
   }, async argv => {
     handled = true;
@@ -1423,7 +1422,7 @@ yargs
             if (hasXrType && hasStartUrl) {
               xrType = j.xr_type;
               xrDetails = j.xr_details;
-              startUrl = j.start_url.replace(/(?:\?|\#).*$/, '');
+              startUrl = j.start_url.replace(/(?:\?|#).*$/, '');
               mimeType = xrTypeToMimeType[xrType] || 'application/octet-stream';
               fileInput = path.join(path.dirname(input), _removeUrlTail(startUrl));
               name = typeof j.name === 'string' ? j.name : path.basename(path.dirname(input));
@@ -1596,8 +1595,8 @@ yargs
       .option('types', {
         alias: 't',
         type: 'boolean',
-        description: 'Show file types as well'
-      })
+        description: 'Show file types as well',
+      });
   }, async argv => {
     handled = true;
 
@@ -1679,7 +1678,7 @@ yargs
               const {body} = res;
               desc = `${body.length}`;
             } else {
-              desc = '[missing]'
+              desc = '[missing]';
             }
             console.log(`${src} ${type} ${desc}`);
           }
@@ -1735,7 +1734,6 @@ yargs
     if (argv.input) {
       const d = fs.readFileSync(argv.input);
       const bundle = new wbn.Bundle(d);
-      const files = [];
       for (const url of bundle.urls) {
         const pathname = new URL(url).pathname.slice(1);
         console.log(pathname);
@@ -1752,7 +1750,7 @@ yargs
 if (!handled) {
   yargs.showHelp();
 }
-  /* .option('verbose', {
+/* .option('verbose', {
     alias: 'v',
     type: 'boolean',
     description: 'Run with verbose logging'
