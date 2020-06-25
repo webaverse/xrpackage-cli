@@ -107,7 +107,7 @@ const uploadPackage = async (dataArrayBuffer, xrpkName) => {
   if (j) {
     if (_isNamed(bundle)) {
       if (_isBaked(bundle)) {
-        const {name, description, icons = []} = j;
+        const {name, description, xr_type: xrType, icons = []} = j;
 
         const iconObjects = [];
         for (let i = 0; i < icons.length; i++) {
@@ -142,6 +142,7 @@ const uploadPackage = async (dataArrayBuffer, xrpkName) => {
         const metadata = {
           name: objectName,
           description: objectDescription,
+          type: xrType,
           icons: iconObjects,
           dataHash,
         };
