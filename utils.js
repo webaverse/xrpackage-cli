@@ -158,7 +158,7 @@ const uploadPackage = async (dataArrayBuffer, xrpkName) => {
           metadataHash,
         };
       } else {
-        throw 'package is not baked; try xrpk bake';
+        throw 'package is not baked or icons are missing; try xrpk bake';
       }
     } else {
       throw `package does not have a valid "name" in manifest.json (${packageNameRegex.toString()})`;
@@ -353,16 +353,20 @@ const _isNamed = bundle => {
 
 const _isBaked = bundle => {
   const j = getManifestJson(bundle);
-  if (j) {
-    const {icons} = j;
-    if (Array.isArray(icons)) {
-      return ['image/gif', 'model/gltf-binary', 'model/gltf-binary+preview'].every(type => icons.some(i => i && i.type === type));
-    } else {
-      return false;
-    }
-  } else {
-    return false;
-  }
+  if (!j) return false;
+
+  const {icons} = j;
+  if (!Array.isArray(icons)) return false;
+
+  const iconTypes = ['image/gif', 'model/gltf-binary', 'model/gltf-binary+preview'];
+  if (!iconTypes.every(type => icons.some(i => i && i.type === type))) return false;
+
+  // Ensure the icons are actually present in the wbn
+  return icons.every(i => {
+    const p = path.normalize(path.join('/', i.src)).replace(/\\/g, '/');
+    const u = bundle.urls.find(u => new url.URL(u).pathname === p);
+    return !!bundle.getResponse(u);
+  });
 };
 
 module.exports = {
