@@ -107,7 +107,7 @@ const uploadPackage = async (dataArrayBuffer, xrpkName) => {
   if (j) {
     if (_isNamed(bundle)) {
       if (_isBaked(bundle)) {
-        const {name, description, xr_type: xrType, icons = [], contract} = j;
+        const {name, description, xr_type: xrType, xr_details: xrDetails = {}, icons = []} = j;
 
         const iconObjects = [];
         for (let i = 0; i < icons.length; i++) {
@@ -139,9 +139,9 @@ const uploadPackage = async (dataArrayBuffer, xrpkName) => {
           .then(j => j.hash);
 
         let contractAddress;
-        if (contract) {
+        if (xrDetails.contract) {
           console.warn('uploading contract...');
-          const response = bundle.getResponse(`https://xrpackage.org/${contract}`);
+          const response = bundle.getResponse(`https://xrpackage.org/${xrDetails.contract}`);
           contractAddress = await fetch(`${contractsUrl}/${objectName}`, {
             method: 'PUT',
             body: response.body,
