@@ -13,7 +13,7 @@ const open = require('open');
 const Web3 = require('./web3');
 const lightwallet = require('./eth-lightwallet');
 
-const {rpcUrl, port, primaryUrl, apiHost} = require('./constants');
+const {rpcUrl, port, primaryUrl, apiHost, contractsUrl} = require('./constants');
 const web3 = new Web3(new Web3.providers.HttpProvider(rpcUrl));
 
 const hdPathString = 'm/44\'/60\'/0\'/0';
@@ -107,7 +107,7 @@ const uploadPackage = async (dataArrayBuffer, xrpkName) => {
   if (j) {
     if (_isNamed(bundle)) {
       if (_isBaked(bundle)) {
-        const {name, description, xr_type: xrType, icons = []} = j;
+        const {name, description, xr_type: xrType, icons = [], contract} = j;
 
         const iconObjects = [];
         for (let i = 0; i < icons.length; i++) {
@@ -138,6 +138,20 @@ const uploadPackage = async (dataArrayBuffer, xrpkName) => {
           .then(res => res.json())
           .then(j => j.hash);
 
+        let contractAddress;
+        if (contract) {
+          console.warn('uploading contract...');
+          const response = bundle.getResponse(`https://xrpackage.org/${contract}`);
+          contractAddress = await fetch(`${contractsUrl}/${objectName}`, {
+            method: 'PUT',
+            body: response.body,
+          })
+            .then(res => res.json())
+            .then(j => j.address);
+        } else {
+          contractAddress = null;
+        }
+
         console.warn('uploading metadata...');
         const metadata = {
           name: objectName,
@@ -145,6 +159,7 @@ const uploadPackage = async (dataArrayBuffer, xrpkName) => {
           type: xrType,
           icons: iconObjects,
           dataHash,
+          contractAddress,
         };
         const metadataHash = await fetch(`${apiHost}/`, {
           method: 'PUT',
