@@ -142,7 +142,7 @@ const uploadPackage = async (dataArrayBuffer, xrpkName) => {
         if (xrDetails.contract) {
           console.warn('uploading contract...');
           const response = bundle.getResponse(`https://xrpackage.org/${xrDetails.contract}`);
-          contractAddress = await fetch(`${contractsUrl}/${objectName}`, {
+          contractAddress = await fetch(`${contractsUrl}/${dataHash}`, {
             method: 'PUT',
             body: response.body,
           })
