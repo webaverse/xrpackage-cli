@@ -1,4 +1,5 @@
 const fs = require('fs');
+const {execSync} = require('child_process');
 
 const {getUserInput} = require('../utils');
 
@@ -12,6 +13,15 @@ module.exports = {
       return;
     }
 
+    let repository;
+    try {
+      repository = execSync('git config --get remote.origin.url').toString().replace(/(\r\n|\r|\n)/, '');
+    } catch (err) {
+      // git not installed/not a repo/etc.
+      repository = '';
+    }
+    repository = await getUserInput('repository: ', {default: repository});
+
     const name = await getUserInput('name: ', {default: 'my-xrpk'});
     const description = await getUserInput('description: ', {default: 'Describe your XRPK'});
     const xrType = await getUserInput('xr type: ', {default: 'webxr-site@0.0.1'});
@@ -19,6 +29,7 @@ module.exports = {
 
     fs.writeFileSync('manifest.json', JSON.stringify({
       name,
+      repository,
       description,
       xr_type: xrType,
       start_url: startUrl,
