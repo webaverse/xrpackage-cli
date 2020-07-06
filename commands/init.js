@@ -3,15 +3,7 @@ const fs = require('fs');
 module.exports = {
   command: 'init',
   describe: 'initialize xrpackage with manifest.json',
-  builder: yargs => {
-    yargs
-      .positional('input', {
-        describe: 'input file to build',
-      })
-      .positional('output', {
-        describe: 'output file to write',
-      });
-  },
+  builder: {},
   handler: async () => {
     if (fs.existsSync('manifest.json')) {
       console.warn('manifest.json already exists; doing nothing');
