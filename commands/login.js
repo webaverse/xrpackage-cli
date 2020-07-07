@@ -2,11 +2,10 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
-const read = require('read');
 const mkdirp = require('mkdirp');
 const fetch = require('node-fetch');
 
-const {makePromise} = require('../utils');
+const {makePromise, getUserInput} = require('../utils');
 const loginEndpoint = 'https://login.exokit.org';
 
 module.exports = {
@@ -14,32 +13,13 @@ module.exports = {
   describe: 'log in to web registry',
   builder: {},
   handler: async () => {
-    const p = makePromise();
-    read({prompt: 'email: '}, function(er, seedPhrase) {
-      if (!er) {
-        p.accept(seedPhrase);
-      } else {
-        p.reject(er);
-      }
-    });
-    const email = await p;
-
+    const email = await getUserInput('email: ');
     const res = await fetch(loginEndpoint + `?email=${encodeURIComponent(email)}`, {
       method: 'POST',
     });
     if (res.status >= 200 && res.status < 300) {
       await res.json();
-
-      const p2 = makePromise();
-      read({prompt: 'login code (check your email!): '}, function(er, code) {
-        if (!er) {
-          p2.accept(code);
-        } else {
-          p2.reject(er);
-        }
-      });
-      const code = await p2;
-
+      const code = await getUserInput('login code (check your email!): ');
       const res2 = await fetch(loginEndpoint + `?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`, {
         method: 'POST',
       });

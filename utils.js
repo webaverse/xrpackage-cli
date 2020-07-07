@@ -30,6 +30,16 @@ function makePromise() {
   return p;
 }
 
+async function getUserInput(prompt, options = {}) {
+  options.prompt = prompt;
+  const p = makePromise();
+  read(options, function(er, input) {
+    if (!er) p.accept(input);
+    else p.reject(er);
+  });
+  return p;
+}
+
 const createKeystore = async (seedPhrase, password) => {
   const p = makePromise();
   lightwallet.keystore.createVault({
@@ -386,6 +396,7 @@ const _isBaked = bundle => {
 
 module.exports = {
   makePromise,
+  getUserInput,
   createKeystore,
   getKs,
   printNotLoggedIn,
