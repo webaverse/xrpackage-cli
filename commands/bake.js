@@ -4,7 +4,6 @@ const http = require('http');
 const puppeteer = require('puppeteer');
 const express = require('express');
 const wbn = require('wbn');
-const open = require('open');
 
 const {makePromise, cloneBundle} = require('../utils');
 const {primaryUrl, port} = require('../constants');
@@ -23,6 +22,7 @@ const _readIntoPromise = (type, p) => (req, res) => {
 };
 
 const _bakeApp = async output => {
+  console.log('BAKE APP');
   const app = express();
   app.use((req, res, next) => {
     res.set('Access-Control-Allow-Origin', '*');
@@ -60,14 +60,14 @@ const _bakeApp = async output => {
   const server = http.createServer(app);
   const connections = [];
   server.on('connection', c => connections.push(c));
-  server.listen(port, async () => {
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    await page.goto(`https://xrpackage.org/bake.html?srcWbn%3Dhttp://localhost:${port}/a.wbn%26dstGif%3Dhttp://localhost:${port}/screenshot.gif%26dstVolume%3Dhttp://localhost:${port}/volume.glb%26dstAabb%3Dhttp://localhost:${port}/aabb.json`);
-
-    await browser.close();
-  });
-
+  server.listen(port);
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  console.log('browser and page loaded');
+  await page.goto(`https://xrpackage.org/bake.html?srcWbn%3Dhttp://localhost:${port}/a.wbn%26dstGif%3Dhttp://localhost:${port}/screenshot.gif%26dstVolume%3Dhttp://localhost:${port}/volume.glb%26dstAabb%3Dhttp://localhost:${port}/aabb.json`);
+  await page.waitForFunction('document.body.innerText.includes("Baking complete! You can close this tab.")');
+  await browser.close();
+  console.log('browser closed');
   const [gifUint8Array, volumeUint8Array, aabbUint8Array] = await Promise.all([gifPromise, volumePromise, aabbPromise]);
   server.close();
   for (let i = 0; i < connections.length; i++) {
