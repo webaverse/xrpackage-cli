@@ -63,7 +63,6 @@ module.exports = {
       .positional('output', {
         describe: 'output file to write',
         type: 'string',
-        default: 'a.wbn',
       })
       .option('screenshot', {
         alias: 's',
@@ -161,6 +160,12 @@ module.exports = {
         }, null, 2),
       },
     ];
+
+    // Default to package name or a.wbn if not explicitly provided
+    argv.output = argv.output || `${name}.wbn` || 'a.wbn';
+
+    // Ensure output file extension is .wbn
+    if (!argv.output.endsWith('.wbn')) argv.output += '.wbn';
 
     if (directory) {
       const filenames = _readdirRecursive(directory, argv.output);
