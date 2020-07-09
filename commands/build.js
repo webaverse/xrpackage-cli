@@ -167,9 +167,6 @@ module.exports = {
     // Default to package name if not explicitly provided
     argv.output = argv.output || `${name}.wbn`;
 
-    // Ensure output file extension is .wbn
-    if (!argv.output.endsWith('.wbn')) argv.output += '.wbn';
-
     if (directory) {
       const filenames = _readdirRecursive(directory, argv.output);
       for (let i = 0; i < filenames.length; i++) {
