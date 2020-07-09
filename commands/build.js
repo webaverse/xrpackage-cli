@@ -63,7 +63,6 @@ module.exports = {
       .positional('output', {
         describe: 'output file to write',
         type: 'string',
-        default: 'a.wbn',
       })
       .option('screenshot', {
         alias: 's',
@@ -72,7 +71,7 @@ module.exports = {
       });
   },
   handler: async argv => {
-    let fileInput, startUrl, xrType, xrDetails, mimeType, name, description, directory;
+    let fileInput, startUrl, xrType, xrDetails, mimeType, name, description, repository, directory;
     const _detectType = input => {
       const type = xrTypes.find(type => type.regex.test(input));
       if (type) {
@@ -83,6 +82,7 @@ module.exports = {
         mimeType = xrTypeToMimeType[xrType];
         name = path.basename(input);
         description = type.description;
+        repository = '';
         directory = null;
       } else if (/\.json$/.test(input)) {
         const s = (() => {
@@ -115,6 +115,7 @@ module.exports = {
               fileInput = path.join(path.dirname(input), _removeUrlTail(startUrl));
               name = typeof j.name === 'string' ? j.name : path.basename(path.dirname(input));
               description = 'Directory package';
+              repository = typeof j.repository === 'string' ? j.repository : '';
               directory = path.dirname(input);
             } else if (!hasXrType) {
               throw `manifest.json missing xr_type: ${input}`;
@@ -155,12 +156,16 @@ module.exports = {
         data: JSON.stringify({
           name,
           description,
+          repository,
           xr_type: xrType,
           start_url: startUrl,
           xr_details: xrDetails,
         }, null, 2),
       },
     ];
+
+    // Default to package name if not explicitly provided
+    argv.output = argv.output || `${name}.wbn`;
 
     if (directory) {
       const filenames = _readdirRecursive(directory, argv.output);
