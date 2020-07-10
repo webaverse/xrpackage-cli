@@ -8,8 +8,7 @@ const express = require('express');
 const read = require('read');
 const fetch = require('node-fetch');
 const wbn = require('wbn');
-const open = require('open');
-
+const puppeteer = require('puppeteer');
 const Web3 = require('./web3');
 const lightwallet = require('./eth-lightwallet');
 
@@ -258,8 +257,13 @@ const screenshotApp = async output => {
   server.on('connection', c => {
     connections.push(c);
   });
-  server.listen(port, () => {
-    open(`https://xrpackage.org/screenshot.html?srcWbn%3Dhttp://localhost:${port}/a.wbn%26dstGif%3Dhttp://localhost:${port}/screenshot.gif`);
+  server.listen(port, async () => {
+    // DEBUG SET HEADLESS TO FALSE
+    const browser = await puppeteer.launch({headless: true});
+    const page = await browser.newPage();
+    await page.goto(`https://xrpackage.org/screenshot.html?srcWbn%3Dhttp://localhost:${port}/a.wbn%26dstGif%3Dhttp://localhost:${port}/screenshot.gif`);
+    await page.waitForSelector('#baked', {visible: true});
+    await browser.close();
   });
 
   const [gifUint8Array] = await Promise.all([gifPromise]);
