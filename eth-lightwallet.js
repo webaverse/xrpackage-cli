@@ -3148,10 +3148,10 @@ Base58Check.prototype.set = function(obj) {
 
 Base58Check.validChecksum = function validChecksum(data, checksum) {
   if (_.isString(data)) {
-    data = new buffer.Buffer(Base58.decode(data));
+    data = new buffer.Buffer.from(Base58.decode(data));
   }
   if (_.isString(checksum)) {
-    checksum = new buffer.Buffer(Base58.decode(checksum));
+    checksum = new buffer.Buffer.from(Base58.decode(checksum));
   }
   if (!checksum) {
     checksum = data.slice(-4);
@@ -4142,12 +4142,12 @@ HDPrivateKey.prototype._deriveWithNumber = function(index, hardened, nonComplian
     // The private key serialization in this case will not be exactly 32 bytes and can be
     // any value less, and the value is not zero-padded.
     var nonZeroPadded = this.privateKey.bn.toBuffer();
-    data = BufferUtil.concat([new buffer.Buffer([0]), nonZeroPadded, indexBuffer]);
+    data = BufferUtil.concat([new buffer.Buffer.from([0]), nonZeroPadded, indexBuffer]);
   } else if (hardened) {
     // This will use a 32 byte zero padded serialization of the private key
     var privateKeyBuffer = this.privateKey.bn.toBuffer({size: 32});
     assert(privateKeyBuffer.length === 32, 'length of private key buffer is expected to be 32 bytes');
-    data = BufferUtil.concat([new buffer.Buffer([0]), privateKeyBuffer, indexBuffer]);
+    data = BufferUtil.concat([new buffer.Buffer.from([0]), privateKeyBuffer, indexBuffer]);
   } else {
     data = BufferUtil.concat([this.publicKey.toBuffer(), indexBuffer]);
   }
@@ -4320,7 +4320,7 @@ HDPrivateKey.fromSeed = function(hexa, network) {
   if (hexa.length > MAXIMUM_ENTROPY_BITS * BITS_TO_BYTES) {
     throw new hdErrors.InvalidEntropyArgument.TooMuchEntropy(hexa);
   }
-  var hash = Hash.sha512hmac(hexa, new buffer.Buffer('Bitcoin seed'));
+  var hash = Hash.sha512hmac(hexa, new buffer.Buffer.from('Bitcoin seed'));
 
   return new HDPrivateKey({
     network: Network.get(network) || Network.defaultNetwork,
@@ -5071,11 +5071,11 @@ function Message(message) {
   return this;
 }
 
-Message.MAGIC_BYTES = new Buffer('Bitcoin Signed Message:\n');
+Message.MAGIC_BYTES = Buffer.from('Bitcoin Signed Message:\n');
 
 Message.prototype.magicHash = function magicHash() {
   var prefix1 = BufferWriter.varintBufNum(Message.MAGIC_BYTES.length);
-  var messageBuffer = new Buffer(this.message);
+  var messageBuffer = Buffer.from(this.message);
   var prefix2 = BufferWriter.varintBufNum(messageBuffer.length);
   var buf = Buffer.concat([prefix1, Message.MAGIC_BYTES, prefix2, messageBuffer]);
   var hash = sha256sha256(buf);
@@ -5132,7 +5132,7 @@ Message.prototype.verify = function verify(bitcoinAddress, signatureString) {
   if (_.isString(bitcoinAddress)) {
     bitcoinAddress = Address.fromString(bitcoinAddress);
   }
-  var signature = Signature.fromCompact(new Buffer(signatureString, 'base64'));
+  var signature = Signature.fromCompact(Buffer.from(signatureString, 'base64'));
 
   // recover the public key
   var ecdsa = new ECDSA();
@@ -7111,7 +7111,7 @@ Interpreter.prototype.checkLockTime = function(nLockTime) {
  * Checks a sequence parameter with the transaction's sequence.
  * @param {BN} nSequence the sequence read from the script
  * @return {boolean} true if the transaction's sequence is less than or equal to
- *                   the transaction's sequence 
+ *                   the transaction's sequence
  */
 Interpreter.prototype.checkSequence = function(nSequence) {
 
@@ -7148,7 +7148,7 @@ Interpreter.prototype.checkSequence = function(nSequence) {
     // of nSequenceMasked being tested is the same as the nSequenceMasked in the
     // transaction.
     var SEQUENCE_LOCKTIME_TYPE_FLAG_BN = new BN(Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG);
-    
+
     if (!((txToSequenceMasked.lt(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)  &&
            nSequenceMasked.lt(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)) ||
           (txToSequenceMasked.gte(SEQUENCE_LOCKTIME_TYPE_FLAG_BN) &&
@@ -7164,7 +7164,7 @@ Interpreter.prototype.checkSequence = function(nSequence) {
     return true;
   }
 
-/** 
+/**
  * Based on the inner loop of bitcoind's EvalScript function
  * bitcoind commit: b5d1b1092998bc95313856d535c632ea5a8f9104
  */
@@ -8326,12 +8326,12 @@ Script.fromASM = function(str) {
 };
 
 Script.fromHex = function(str) {
-  return new Script(new buffer.Buffer(str, 'hex'));
+  return new Script(new buffer.Buffer.from(str, 'hex'));
 };
 
 Script.fromString = function(str) {
   if (JSUtil.isHexa(str) || str.length === 0) {
-    return new Script(new buffer.Buffer(str, 'hex'));
+    return new Script(new buffer.Buffer.from(str, 'hex'));
   }
   var script = new Script();
   script.chunks = [];
@@ -9391,7 +9391,7 @@ Input.fromObject = function(obj) {
 Input.prototype._fromObject = function(params) {
   var prevTxId;
   if (_.isString(params.prevTxId) && JSUtil.isHexa(params.prevTxId)) {
-    prevTxId = new buffer.Buffer(params.prevTxId, 'hex');
+    prevTxId = new buffer.Buffer.from(params.prevTxId, 'hex');
   } else {
     prevTxId = params.prevTxId;
   }
@@ -9458,7 +9458,7 @@ Input.prototype.setScript = function(script) {
     this._scriptBuffer = script.toBuffer();
   } else if (JSUtil.isHexa(script)) {
     // hex string script
-    this._scriptBuffer = new buffer.Buffer(script, 'hex');
+    this._scriptBuffer = new buffer.Buffer.from(script, 'hex');
   } else if (_.isString(script)) {
     // human readable string script
     this._script = new Script(script);
@@ -9466,7 +9466,7 @@ Input.prototype.setScript = function(script) {
     this._scriptBuffer = this._script.toBuffer();
   } else if (BufferUtil.isBuffer(script)) {
     // buffer script
-    this._scriptBuffer = new buffer.Buffer(script);
+    this._scriptBuffer = new buffer.Buffer.from(script);
   } else {
     throw new TypeError('Invalid argument type: script');
   }
@@ -9925,7 +9925,7 @@ MultiSigScriptHashInput.prototype.addSignature = function(transaction, signature
 MultiSigScriptHashInput.prototype._updateScript = function() {
   if (this.nestedWitness) {
     var stack = [
-      new Buffer(0),
+      Buffer.alloc(0),
     ];
     var signatures = this._createSignatures();
     for (var i = 0; i < signatures.length; i++) {
@@ -10235,7 +10235,7 @@ function Output(args) {
     } else {
       var script;
       if (_.isString(args.script) && JSUtil.isHexa(args.script)) {
-        script = new buffer.Buffer(args.script, 'hex');
+        script = new buffer.Buffer.from(args.script, 'hex');
       } else {
         script = args.script;
       }
@@ -10361,7 +10361,7 @@ Output.fromBufferReader = function(br) {
   if (size !== 0) {
     obj.script = br.read(size);
   } else {
-    obj.script = new buffer.Buffer([]);
+    obj.script = new buffer.Buffer.from([]);
   }
   return new Output(obj);
 };
@@ -10452,7 +10452,7 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript)
 
     for (i = 0; i < inputNumber; i++) {
       txcopy.outputs[i] = new Output({
-        satoshis: BN.fromBuffer(new buffer.Buffer(BITS_64_ON, 'hex')),
+        satoshis: BN.fromBuffer(new buffer.Buffer.from(BITS_64_ON, 'hex')),
         script: Script.empty()
       });
     }
@@ -10558,7 +10558,7 @@ var sighash = function sighash(transaction, sighashType, inputNumber, scriptCode
       var input = transaction.inputs[n];
       var prevTxIdBuffer = new BufferReader(input.prevTxId).readReverse();
       buffers.push(prevTxIdBuffer);
-      var outputIndexBuffer = new Buffer(new Array(4));
+      var outputIndexBuffer = Buffer.from(new Array(4));
       outputIndexBuffer.writeUInt32LE(input.outputIndex, 0);
       buffers.push(outputIndexBuffer);
     }
@@ -10570,7 +10570,7 @@ var sighash = function sighash(transaction, sighashType, inputNumber, scriptCode
 
     var sequenceBuffers = [];
     for (var m = 0; m < transaction.inputs.length; m++) {
-      var sequenceBuffer = new Buffer(new Array(4));
+      var sequenceBuffer = Buffer.from(new Array(4));
       sequenceBuffer.writeUInt32LE(transaction.inputs[m].sequenceNumber, 0);
       sequenceBuffers.push(sequenceBuffer);
     }
@@ -11074,7 +11074,7 @@ Transaction.prototype.toBufferWriter = function(writer, noWitness) {
   var hasWitnesses = this.hasWitnesses();
 
   if (hasWitnesses && !noWitness) {
-    writer.write(new Buffer('0001', 'hex'));
+    writer.write(Buffer.from('0001', 'hex'));
   }
 
   writer.writeVarintNum(this.inputs.length);
@@ -12750,7 +12750,7 @@ module.exports = {
    */
   emptyBuffer: function emptyBuffer(bytes) {
     $.checkArgumentType(bytes, 'number', 'bytes');
-    var result = new buffer.Buffer(bytes);
+    var result = new buffer.Buffer.alloc(bytes);
     for (var i = 0; i < bytes; i++) {
       result.write('\0', i);
     }
@@ -12775,7 +12775,7 @@ module.exports = {
    */
   integerAsSingleByteBuffer: function integerAsSingleByteBuffer(integer) {
     $.checkArgumentType(integer, 'number', 'integer');
-    return new buffer.Buffer([integer & 0xff]);
+    return new buffer.Buffer.from([integer & 0xff]);
   },
 
   /**
@@ -12834,7 +12834,7 @@ module.exports = {
    * @return {Buffer}
    */
   reverse: function reverse(param) {
-    var ret = new buffer.Buffer(param.length);
+    var ret = new buffer.Buffer.alloc(param.length);
     for (var i = 0; i < param.length; i++) {
       ret[i] = param[param.length - i - 1];
     }
@@ -12851,7 +12851,7 @@ module.exports = {
    */
   hexToBuffer: function hexToBuffer(string) {
     assert(js.isHexa(string));
-    return new buffer.Buffer(string, 'hex');
+    return new buffer.Buffer.from(string, 'hex');
   }
 };
 
@@ -34286,7 +34286,7 @@ Mnemonic.isValid = function(mnemonic, wordlist) {
   var cs = bin.length / 33;
   var hash_bits = bin.slice(-cs);
   var nonhash_bits = bin.slice(0, bin.length - cs);
-  var buf = new Buffer(nonhash_bits.length / 8);
+  var buf = Buffer.alloc(nonhash_bits.length / 8);
   for (i = 0; i < nonhash_bits.length / 8; i++) {
     buf.writeUInt8(parseInt(bin.slice(i * 8, (i + 1) * 8), 2), i);
   }
@@ -34484,18 +34484,18 @@ function pbkdf2(key, salt, iterations, dkLen) {
   }
 
   if (typeof key === 'string') {
-    key = new Buffer(key);
+    key = Buffer.from(key);
   }
 
   if (typeof salt === 'string') {
-    salt = new Buffer(salt);
+    salt = Buffer.from(salt);
   }
 
-  var DK = new Buffer(dkLen);
+  var DK = Buffer.alloc(dkLen);
 
-  var U = new Buffer(hLen);
-  var T = new Buffer(hLen);
-  var block1 = new Buffer(salt.length + 4);
+  var U = Buffer.alloc(hLen);
+  var T = Buffer.alloc(hLen);
+  var block1 = Buffer.alloc(salt.length + 4);
 
   var l = Math.ceil(dkLen / hLen);
   var r = dkLen - (l - 1) * hLen;
@@ -46241,11 +46241,11 @@ const Assert = require('./assert');
 function encodeHex(msgUInt8Arr) {
   const msgBase64 = NaclUtil.encodeBase64(msgUInt8Arr);
 
-  return (new Buffer(msgBase64, 'base64')).toString('hex');
+  return (Buffer.from(msgBase64, 'base64')).toString('hex');
 }
 
 function decodeHex(msgHex) {
-  const msgBase64 = (new Buffer(msgHex, 'hex')).toString('base64');
+  const msgBase64 = (Buffer.from(msgHex, 'hex')).toString('base64');
 
   return NaclUtil.decodeBase64(msgBase64);
 }
@@ -46654,7 +46654,7 @@ KeyStore.generateRandomSeed = function (extraEntropy) {
   if (extraEntropy === undefined) {
     seed = new Mnemonic(Mnemonic.Words.ENGLISH);
   } else if (typeof extraEntropy === 'string') {
-    const entBuf = new Buffer(extraEntropy);
+    const entBuf = Buffer.from(extraEntropy);
     const randBuf = Random.getRandomBuffer(256 / 8);
     const hashedEnt = this._concatAndSha256(randBuf, entBuf).slice(0, 128 / 8);
 
@@ -46786,11 +46786,11 @@ KeyStore._computePubkeyFromPrivKey = function (privKey, curve) {
     throw new Error('KeyStore._computePubkeyFromPrivKey: Only "curve25519" supported.');
   }
 
-  const privateKeyBase64 = (new Buffer(privKey, 'hex')).toString('base64');
+  const privateKeyBase64 = (Buffer.from(privKey, 'hex')).toString('base64');
   const privateKeyUInt8Array = NaclUtil.decodeBase64(privateKeyBase64);
   const pubKey = Nacl.box.keyPair.fromSecretKey(privateKeyUInt8Array).publicKey;
   const pubKeyBase64 = NaclUtil.encodeBase64(pubKey);
-  const pubKeyHex = (new Buffer(pubKeyBase64, 'base64')).toString('hex');
+  const pubKeyHex = (Buffer.from(pubKeyBase64, 'base64')).toString('hex');
 
   return pubKeyHex;
 };
@@ -46819,13 +46819,13 @@ const Assert = require('./assert');
 function getPrivateKeyBuff(keystore, pwDerivedKey, address) {
   const privateKey = keystore.exportPrivateKey(Util.stripHexPrefix(address), pwDerivedKey);
 
-  return new Buffer(privateKey, 'hex');
+  return Buffer.from(privateKey, 'hex');
 }
 
 function signTx(keystore, pwDerivedKey, rawTx, signingAddress) {
   Assert.derivedKey(keystore, pwDerivedKey);
 
-  const tx = new Transaction(new Buffer(Util.stripHexPrefix(rawTx), 'hex'));
+  const tx = new Transaction(Buffer.from(Util.stripHexPrefix(rawTx), 'hex'));
   const privateKeyBuff = getPrivateKeyBuff(keystore, pwDerivedKey, signingAddress);
 
   tx.sign(privateKeyBuff);
@@ -46844,7 +46844,7 @@ function signMsg(keystore, pwDerivedKey, rawMsg, signingAddress) {
 function signMsgHash(keystore, pwDerivedKey, msgHash, signingAddress) {
   Assert.derivedKey(keystore, pwDerivedKey);
 
-  const msgBuff = new Buffer(Util.stripHexPrefix(msgHash), 'hex');
+  const msgBuff = Buffer.from(Util.stripHexPrefix(msgHash), 'hex');
   const privateKeyBuff = getPrivateKeyBuff(keystore, pwDerivedKey, signingAddress);
 
   return Util.ecsign(msgBuff, privateKeyBuff);
@@ -46936,7 +46936,7 @@ function valueTx(txObject) {
 }
 
 function createdContractAddress(fromAddress, nonce) {
-  const addressBuf = new Buffer(Util.stripHexPrefix(fromAddress), 'hex');
+  const addressBuf = Buffer.from(Util.stripHexPrefix(fromAddress), 'hex');
   const rlpEncodedHex = Rlp.encode([addressBuf, nonce]).toString('hex');
   const rlpEncodedWordArray = CryptoJS.enc.Hex.parse(rlpEncodedHex);
   const hash = CryptoJS.SHA3(rlpEncodedWordArray, { outputLength: 256 }).toString(CryptoJS.enc.Hex);
@@ -47032,7 +47032,7 @@ function upgradeVersion2(oldKS, password, callback) {
     }
 
     let seedPhrase = Keystore._decryptString(encSeed, pwKey);
-    
+
     if (seedPhrase) {
       seedPhrase = seedPhrase.trim();
     }
@@ -47518,49 +47518,49 @@ var Transaction = function () {
       name: 'nonce',
       length: 32,
       allowLess: true,
-      default: new Buffer([])
+      default: Buffer.from([])
     }, {
       name: 'gasPrice',
       length: 32,
       allowLess: true,
-      default: new Buffer([])
+      default: Buffer.from([])
     }, {
       name: 'gasLimit',
       alias: 'gas',
       length: 32,
       allowLess: true,
-      default: new Buffer([])
+      default: Buffer.from([])
     }, {
       name: 'to',
       allowZero: true,
       length: 20,
-      default: new Buffer([])
+      default: Buffer.from([])
     }, {
       name: 'value',
       length: 32,
       allowLess: true,
-      default: new Buffer([])
+      default: Buffer.from([])
     }, {
       name: 'data',
       alias: 'input',
       allowZero: true,
-      default: new Buffer([])
+      default: Buffer.from([])
     }, {
       name: 'v',
       allowZero: true,
-      default: new Buffer([0x1c])
+      default: Buffer.from([0x1c])
     }, {
       name: 'r',
       length: 32,
       allowZero: true,
       allowLess: true,
-      default: new Buffer([])
+      default: Buffer.from([])
     }, {
       name: 's',
       length: 32,
       allowZero: true,
       allowLess: true,
-      default: new Buffer([])
+      default: Buffer.from([])
     }];
 
     /**
@@ -54357,7 +54357,7 @@ function intToHex(i) {
 function intToBuffer(i) {
   var hex = intToHex(i);
 
-  return new Buffer(padToEven(hex.slice(2)), 'hex');
+  return Buffer.from(padToEven(hex.slice(2)), 'hex');
 }
 
 /**
@@ -54403,7 +54403,7 @@ function arrayContainsArray(superset, subset, some) {
  * @returns {String} ascii string representation of hex value
  */
 function toUtf8(hex) {
-  var bufferValue = new Buffer(padToEven(stripHexPrefix(hex).replace(/^0+|0+$/g, '')), 'hex');
+  var bufferValue = Buffer.from(padToEven(stripHexPrefix(hex).replace(/^0+|0+$/g, '')), 'hex');
 
   return bufferValue.toString('utf8');
 }
@@ -54441,7 +54441,7 @@ function toAscii(hex) {
  * @returns {String} hex representation of input string
  */
 function fromUtf8(stringValue) {
-  var str = new Buffer(stringValue, 'utf8');
+  var str = Buffer.from(stringValue, 'utf8');
 
   return '0x' + padToEven(str.toString('hex')).replace(/^0+|0+$/g, '');
 }
@@ -58504,12 +58504,12 @@ module.exports = function stripHexPrefix(str) {
     } else {
       // Node earlier than v6
       util.encodeBase64 = function (arr) { // v6 and later
-        return (new Buffer(arr)).toString('base64');
+        return (Buffer.from(arr)).toString('base64');
       };
 
       util.decodeBase64 = function(s) {
         validateBase64(s);
-        return new Uint8Array(Array.prototype.slice.call(new Buffer(s, 'base64'), 0));
+        return new Uint8Array(Array.prototype.slice.call(Buffer.from(s, 'base64'), 0));
       };
     }
 
@@ -61342,7 +61342,7 @@ UChar.udata={
          configurable: true,
          writable: true,
          value: function normalize (/*form*/) {
-            
+
             var str = "" + this;
             var form = arguments[0] === undefined ? "NFC" : arguments[0];
 
@@ -62277,7 +62277,7 @@ module.exports = SolidityTypeInt;
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/** 
+/**
  * @file param.js
  * @author Marek Kotewicz <marek@ethdev.com>
  * @date 2015
@@ -62296,7 +62296,7 @@ var SolidityParam = function (value, offset) {
 
 /**
  * This method should be used to get length of params's dynamic part
- * 
+ *
  * @method dynamicPartLength
  * @returns {Number} length of dynamic part (in bytes)
  */
@@ -62324,7 +62324,7 @@ SolidityParam.prototype.withOffset = function (offset) {
  * @param {SolidityParam} result of combination
  */
 SolidityParam.prototype.combine = function (param) {
-    return new SolidityParam(this.value + param.value); 
+    return new SolidityParam(this.value + param.value);
 };
 
 /**
@@ -62356,8 +62356,8 @@ SolidityParam.prototype.offsetAsBytes = function () {
  */
 SolidityParam.prototype.staticPart = function () {
     if (!this.isDynamic()) {
-        return this.value; 
-    } 
+        return this.value;
+    }
     return this.offsetAsBytes();
 };
 
@@ -62389,7 +62389,7 @@ SolidityParam.prototype.encode = function () {
  * @returns {String}
  */
 SolidityParam.encodeList = function (params) {
-    
+
     // updating offsets
     var totalOffset = params.length * 32;
     var offsetParams = params.map(function (param) {
@@ -62820,13 +62820,13 @@ module.exports = SolidityTypeUReal;
 
 /**
  * Utils
- * 
+ *
  * @module utils
  */
 
 /**
  * Utility functions
- * 
+ *
  * @class [utils] config
  * @constructor
  */
@@ -62893,7 +62893,7 @@ module.exports = {
     You should have received a copy of the GNU Lesser General Public License
     along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/** 
+/**
  * @file sha3.js
  * @author Marek Kotewicz <marek@ethdev.com>
  * @date 2015
