@@ -42,7 +42,7 @@ Options:
 
 For interacting with Ethereum, the `xrpk` CLI tool uses the [`eth-lightwallet`](https://github.com/ConsenSys/eth-lightwallet/) package, however that generally requires a native build. Therefore, this repo includes the [`./eth-lightwallet.js`](./eth-lightwallet.js) file, which is the `eth-lightwallet` module bundled using [Browserify](http://browserify.org/).
 
-In case a new version is needed to be built, perform the following steps:
+In case a new version is needed to be built, perform the following steps (or use the [`gen-eth-lightwallet`](./gen-eth-lightwallet) script):
 
 ```bash
 npm install eth-lightwallet # Temporarily install & build eth-lightwallet locally

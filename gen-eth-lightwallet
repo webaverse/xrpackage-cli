@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+echo "Temporarily installing eth-lightwallet"
+npm install eth-lightwallet
+cd node_modules/eth-lightwallet
+
+echo "Performing bundling"
+browserify index.js -o eth-lightwallet.js --node --standalone ethlightwallet
+
+echo "Replacing repo eth-lightwallet.js file with new bundled file"
+mv eth-lightwallet.js ../../eth-lightwallet.js
+cd ../../
+
+echo "Uninstalling eth-lightwallet"
+npm remove eth-lightwallet
+
+echo "Done! Note: now go through eth-lightwallet.js manually to replace Buffer API usages to newest API"
