@@ -37,3 +37,22 @@ Options:
   --help     Show help            [boolean]
   --version  Show version number  [boolean]
 ```
+
+## Notes
+
+For interacting with Ethereum, the `xrpk` CLI tool uses the [`eth-lightwallet`](https://github.com/ConsenSys/eth-lightwallet/) package, however that generally requires a native build. Therefore, this repo includes the [`./eth-lightwallet.js`](./eth-lightwallet.js) file, which is the `eth-lightwallet` module bundled using [Browserify](http://browserify.org/).
+
+In case a new version is needed to be built, perform the following steps:
+
+```bash
+npm install eth-lightwallet # Temporarily install & build eth-lightwallet locally
+cd node_modules/eth-lightwallet
+browserify index.js -o eth-lightwallet.js --node --standalone ethlightwallet # Bundle the module
+mv eth-lightwallet.js ../../eth-lightwallet.js # Replace the repo's eth-lightwallet.js file
+cd ../../
+npm remove eth-lightwallet # Uninstall temp version of eth-lightwallet
+```
+
+Ideally, we also update any uses of `new Buffer(...)` to the new Node `Buffer` API which needs to be done manually. This can be done by doing a search in the new `eth-lightwallet.js` file for `new Buffer` and `buffer.Buffer` -- for each of these uses, determine the correct new API to use (it will likely be either `Buffer.from` for strings/objects, or `Buffer.alloc` for numbers). See [this commit](https://github.com/webaverse/xrpackage-cli/pull/29/commits/a7232ac5813d489ae5244df5b0c67b0a8e802bc8) for an example diff after performing this process.
+
+See https://github.com/webaverse/xrpackage-cli/issues/20 for further background.
