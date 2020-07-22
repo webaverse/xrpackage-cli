@@ -10,7 +10,5 @@ echo "Replacing repo eth-lightwallet.js file with new bundled file"
 mv eth-lightwallet.js ../../eth-lightwallet.js
 cd ../../
 
-echo "Uninstalling eth-lightwallet"
-npm remove eth-lightwallet
-
 echo "Done! Note: now go through eth-lightwallet.js manually to replace Buffer API usages to newest API"
+echo "You may want to run 'npm remove eth-lightwallet' if it is no longer required"
