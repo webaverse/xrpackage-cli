@@ -1,6 +1,6 @@
 {
   "name": "xrpk",
-  "version": "0.0.74",
+  "version": "0.0.75",
   "description": "",
   "main": "cli.js",
   "scripts": {
