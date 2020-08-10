@@ -57,3 +57,24 @@ cd ../../
 Ideally, we also update any uses of `new Buffer(...)` to the new Node `Buffer` API which needs to be done manually. This can be done by doing a search in the new `eth-lightwallet.js` file for `new Buffer` and `buffer.Buffer` -- for each of these uses, determine the correct new API to use (it will likely be either `Buffer.from` for strings/objects, or `Buffer.alloc` for numbers). See [this commit](https://github.com/webaverse/xrpackage-cli/pull/29/commits/a7232ac5813d489ae5244df5b0c67b0a8e802bc8) for an example diff after performing this process.
 
 See https://github.com/webaverse/xrpackage-cli/issues/20 for further background.
+
+## Testing
+
+This CLI tool uses [AVA](https://github.com/avajs/ava) as a test runner. Tests are in the [`./tests`](./tests) directory, with utility/helper files in [`./tests/utils`](./tests/utils).
+
+See the AVA config file at [`./ava.config.js`](./ava.config.js).
+
+Tests usually use the `runCommand(command: string, params?: [string])` helper function in [`./tests/utils/helpers.js`](./tests/utils/helpers.js) file, which runs commands with the current working directory set to `tests`. A simple test can look like:
+
+```js
+const test = require('ava');
+
+const {runCommand} = require('./utils/helpers');
+
+test('view', async t => {
+  const {stdout} = await runCommand('view', ['assets/w.glb.wbn']); // i.e. ./tests/assets/w.glb.wbn
+  t.is(stdout, 'https://xrpackage.org/w.glb\nhttps://xrpackage.org/manifest.json\n');
+});
+```
+
+Running `npm run test` will automatically run all the tests in the `tests` directory.
