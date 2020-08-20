@@ -220,7 +220,9 @@ const cloneBundle = (bundle, options = {}) => {
   return builder;
 };
 
-const newPuppeteerPage = async (headless = true) => {
+const newPuppeteerPage = async (headless = false) => {
+  // Default headless to FALSE to avoid apparent headless chrome multisampled depth buffer bug
+  // where we get the "samples out of range" error
   const browser = await puppeteer.launch({headless});
   const page = await browser.newPage();
   page.on('console', consoleObj => console.log('Page log:', consoleObj.text()));
