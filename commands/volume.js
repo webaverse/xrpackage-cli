@@ -3,9 +3,8 @@ const http = require('http');
 
 const express = require('express');
 const wbn = require('wbn');
-const puppeteer = require('puppeteer');
 
-const {makePromise, cloneBundle} = require('../utils');
+const {makePromise, cloneBundle, newPuppeteerPage} = require('../utils');
 const {primaryUrl, port} = require('../constants');
 
 const _readIntoPromise = (type, p) => (req, res) => {
@@ -53,9 +52,7 @@ const _volumeApp = async output => {
   const connections = [];
   server.on('connection', c => connections.push(c));
   server.listen(port, async () => {
-    // DEBUG SET HEADLESS TO FALSE
-    const browser = await puppeteer.launch({headless: true});
-    const page = await browser.newPage();
+    const {browser, page} = await newPuppeteerPage();
     await page.goto(`https://xrpackage.org/volume.html?srcWbn%3Dhttp://localhost:${port}/a.wbn%26dstVolume%3Dhttp://localhost:${port}/volume.glb%26dstAabb%3Dhttp://localhost:${port}/aabb.json`);
     await page.waitForSelector('#baked', {visible: true});
     await browser.close();

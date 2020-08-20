@@ -1,11 +1,10 @@
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
-const puppeteer = require('puppeteer');
 const express = require('express');
 const wbn = require('wbn');
 
-const {makePromise, cloneBundle} = require('../utils');
+const {makePromise, cloneBundle, newPuppeteerPage} = require('../utils');
 const {primaryUrl, port} = require('../constants');
 
 const _readIntoPromise = (type, p) => (req, res) => {
@@ -60,9 +59,7 @@ const _bakeApp = async output => {
   const connections = [];
   server.on('connection', c => connections.push(c));
   server.listen(port, async () => {
-  // DEBUG SET HEADLESS TO FALSE
-    const browser = await puppeteer.launch({headless: true});
-    const page = await browser.newPage();
+    const {browser, page} = await newPuppeteerPage();
     await page.goto(`https://xrpackage.org/bake.html?srcWbn%3Dhttp://localhost:${port}/a.wbn%26dstGif%3Dhttp://localhost:${port}/screenshot.gif%26dstVolume%3Dhttp://localhost:${port}/volume.glb%26dstAabb%3Dhttp://localhost:${port}/aabb.json`, {waitUntil: 'networkidle2'});
     await page.waitForSelector('#baked', {visible: true});
     await browser.close();

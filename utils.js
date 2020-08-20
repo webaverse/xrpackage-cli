@@ -220,6 +220,15 @@ const cloneBundle = (bundle, options = {}) => {
   return builder;
 };
 
+const newPuppeteerPage = async (headless = true) => {
+  const browser = await puppeteer.launch({headless});
+  const page = await browser.newPage();
+  page.on('console', consoleObj => console.log('Page log:', consoleObj.text()));
+  page.on('pageerror', err => console.error('Page error: ', err.stack));
+  page.on('requestfailed', req => console.error('Request failed: ', req));
+  return {browser, page};
+};
+
 const screenshotApp = async output => {
   const app = express();
   app.use((req, res, next) => {
@@ -258,9 +267,7 @@ const screenshotApp = async output => {
     connections.push(c);
   });
   server.listen(port, async () => {
-    // DEBUG SET HEADLESS TO FALSE
-    const browser = await puppeteer.launch({headless: true});
-    const page = await browser.newPage();
+    const {browser, page} = await newPuppeteerPage();
     await page.goto(`https://xrpackage.org/screenshot.html?srcWbn%3Dhttp://localhost:${port}/a.wbn%26dstGif%3Dhttp://localhost:${port}/screenshot.gif`);
     await page.waitForSelector('#baked', {visible: true});
     await browser.close();
@@ -407,6 +414,7 @@ module.exports = {
   getManifestJson,
   uploadPackage,
   getContract,
+  newPuppeteerPage,
   screenshotApp,
   cloneBundle,
 
