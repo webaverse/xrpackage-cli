@@ -71,7 +71,7 @@ module.exports = {
       });
   },
   handler: async argv => {
-    let fileInput, startUrl, xrType, xrDetails, mimeType, name, description, repository, directory;
+    let fileInput, startUrl, physicsUrl, physics, xrType, xrDetails, mimeType, name, description, repository, directory;
     const _detectType = input => {
       const type = xrTypes.find(type => type.regex.test(input));
       if (type) {
