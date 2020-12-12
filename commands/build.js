@@ -71,7 +71,7 @@ module.exports = {
       });
   },
   handler: async argv => {
-    let fileInput, startUrl, xrType, xrDetails, mimeType, name, description, repository, directory;
+    let fileInput, startUrl, physicsUrl, physics, xrType, xrDetails, mimeType, name, description, repository, directory;
     const _detectType = input => {
       const type = xrTypes.find(type => type.regex.test(input));
       if (type) {
@@ -110,6 +110,8 @@ module.exports = {
             if (hasXrType && hasStartUrl) {
               xrType = j.xr_type;
               xrDetails = j.xr_details;
+              physicsUrl = j.physics_url;
+              physics = j.physics;
               startUrl = j.start_url.replace(/(?:\?|#).*$/, '');
               mimeType = xrTypeToMimeType[xrType] || 'application/octet-stream';
               fileInput = path.join(path.dirname(input), _removeUrlTail(startUrl));
@@ -158,6 +160,8 @@ module.exports = {
           description,
           repository,
           xr_type: xrType,
+          physics_url: physicsUrl,
+          physics,
           start_url: startUrl,
           xr_details: xrDetails,
         }, null, 2),
