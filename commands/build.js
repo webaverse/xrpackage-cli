@@ -110,6 +110,8 @@ module.exports = {
             if (hasXrType && hasStartUrl) {
               xrType = j.xr_type;
               xrDetails = j.xr_details;
+              physicsUrl = j.physics_url;
+              physics = j.physics;
               startUrl = j.start_url.replace(/(?:\?|#).*$/, '');
               mimeType = xrTypeToMimeType[xrType] || 'application/octet-stream';
               fileInput = path.join(path.dirname(input), _removeUrlTail(startUrl));
@@ -158,6 +160,8 @@ module.exports = {
           description,
           repository,
           xr_type: xrType,
+          physics_url: physicsUrl,
+          physics,
           start_url: startUrl,
           xr_details: xrDetails,
         }, null, 2),
