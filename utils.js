@@ -192,13 +192,16 @@ const uploadPackage = async (dataArrayBuffer, xrpkName) => {
   }
 };
 
-const getContract = Promise.all([
-  fetch('https://contracts.webaverse.com/address.js').then(res => res.text()).then(s => s.replace(/^export default `(.+?)`[\s\S]*$/, '$1')),
-  fetch('https://contracts.webaverse.com/abi.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^export default /, ''))),
-]).then(([address, abi]) => {
-  // console.log('got address + abi', {address, abi});
-  return new web3.eth.Contract(abi, address);
-});
+const getContract = () => {
+  throw new Error('contracts not supported');
+  /* Promise.all([
+    fetch('https://contracts.webaverse.com/address.js').then(res => res.text()).then(s => s.replace(/^export default `(.+?)`[\s\S]*$/, '$1')),
+    fetch('https://contracts.webaverse.com/abi.js').then(res => res.text()).then(s => JSON.parse(s.replace(/^export default /, ''))),
+  ]).then(([address, abi]) => {
+    // console.log('got address + abi', {address, abi});
+    return new web3.eth.Contract(abi, address);
+  }); */
+};
 
 const cloneBundle = (bundle, options = {}) => {
   const except = options.except || [];
