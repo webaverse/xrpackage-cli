@@ -105,6 +105,7 @@ module.exports = {
           })();
 
           if (j) {
+            j.xr_type = 'webxr-site@0.0.1'; // XXX hack
             const hasXrType = typeof j.xr_type === 'string';
             const hasStartUrl = typeof j.start_url === 'string';
             if (hasXrType && hasStartUrl) {
