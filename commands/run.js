@@ -47,6 +47,8 @@ module.exports = {
       next();
     });
 
+    const server = http.createServer(app);
+
     let runSpec;
     if (!isNaN(parseInt(argv.id, 10))) {
       runSpec = _getRunUrl({
@@ -65,14 +67,17 @@ module.exports = {
           res.statusCode = 500;
           res.end(err.stack);
         });
+
+        // Once the file is loaded in memory, we don't need the express server
+        server.close();
       });
     }
+
     const {url, servePath} = runSpec;
     if (servePath) {
       app.use(express.static(servePath));
     }
 
-    const server = http.createServer(app);
     server.listen(port, () => {
       open(url);
     });
